@@ -21,4 +21,14 @@ class Escapee
     context.fillStyle = @color
     context.fillRect(@x, @y, WIDTH, HEIGHT)
 
-new Escapee(100, 100).render(context)
+escapee = new Escapee(100, 100)
+
+render = ->
+  context.clearRect(0, 0, canvas.width, canvas.height)
+  escapee.render(context)
+
+animation_loop = ->
+  render()
+  webkitRequestAnimationFrame(animation_loop)
+
+animation_loop()

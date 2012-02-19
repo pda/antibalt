@@ -1,5 +1,5 @@
 (function() {
-  var Color, Escapee, canvas, context, rgb;
+  var Color, Escapee, animation_loop, canvas, context, escapee, render, rgb;
 
   canvas = document.getElementById("antibalt");
 
@@ -53,6 +53,18 @@
 
   })();
 
-  new Escapee(100, 100).render(context);
+  escapee = new Escapee(100, 100);
+
+  render = function() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    return escapee.render(context);
+  };
+
+  animation_loop = function() {
+    render();
+    return webkitRequestAnimationFrame(animation_loop);
+  };
+
+  animation_loop();
 
 }).call(this);
