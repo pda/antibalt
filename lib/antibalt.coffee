@@ -8,6 +8,14 @@ context = canvas.getContext("2d")
 
 rgb = (r, g, b) -> (new Color(r, g, b)).toString()
 
+Physics =
+  G: 9.80665
+  apply_gravity: (o) ->
+    o.velocity.y += (Physics.G / 32)
+  apply_velocity: (o) ->
+    o.x += o.velocity.x
+    o.y += o.velocity.y
+
 class Color
   constructor: (@r, @g, @b) ->
   toString: -> "rgb(#{@r},#{@g},#{@b})"
@@ -17,6 +25,7 @@ class Escapee
   HEIGHT = 16
   constructor: (@x, @y) ->
     @color = rgb(64, 64, 255)
+    @velocity = { x: 0, y: 0 }
   render: (context) ->
     context.fillStyle = @color
     context.fillRect(@x, @y, WIDTH, HEIGHT)
@@ -28,6 +37,8 @@ render = ->
   escapee.render(context)
 
 animation_loop = ->
+  Physics.apply_gravity(escapee)
+  Physics.apply_velocity(escapee)
   render()
   webkitRequestAnimationFrame(animation_loop)
 

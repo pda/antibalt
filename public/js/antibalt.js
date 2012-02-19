@@ -1,5 +1,5 @@
 (function() {
-  var Color, Escapee, animation_loop, canvas, context, escapee, render, rgb;
+  var Color, Escapee, Physics, animation_loop, canvas, context, escapee, render, rgb;
 
   canvas = document.getElementById("antibalt");
 
@@ -13,6 +13,17 @@
 
   rgb = function(r, g, b) {
     return (new Color(r, g, b)).toString();
+  };
+
+  Physics = {
+    G: 9.80665,
+    apply_gravity: function(o) {
+      return o.velocity.y += Physics.G / 32;
+    },
+    apply_velocity: function(o) {
+      o.x += o.velocity.x;
+      return o.y += o.velocity.y;
+    }
   };
 
   Color = (function() {
@@ -42,6 +53,10 @@
       this.x = x;
       this.y = y;
       this.color = rgb(64, 64, 255);
+      this.velocity = {
+        x: 0,
+        y: 0
+      };
     }
 
     Escapee.prototype.render = function(context) {
@@ -61,6 +76,8 @@
   };
 
   animation_loop = function() {
+    Physics.apply_gravity(escapee);
+    Physics.apply_velocity(escapee);
     render();
     return webkitRequestAnimationFrame(animation_loop);
   };
