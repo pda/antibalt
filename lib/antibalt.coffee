@@ -9,12 +9,13 @@ context = canvas.getContext("2d")
 rgb = (r, g, b) -> (new Color(r, g, b)).toString()
 
 Physics =
-  G: 9.80665
-  apply_gravity: (o) ->
-    o.velocity.y += (Physics.G / 32)
-  apply_velocity: (o) ->
-    o.x += o.velocity.x
-    o.y += o.velocity.y
+  GRAVITY: 9.80665 # acceleration: m/s^2
+  PPM: 10 # pixels per meter
+  apply_gravity: (o, sec) ->
+    o.velocity.y += Physics.GRAVITY * sec * Physics.PPM
+  apply_velocity: (o, sec) ->
+    o.x += o.velocity.x * sec * Physics.PPM
+    o.y += o.velocity.y * sec * Physics.PPM
 
 class Color
   constructor: (@r, @g, @b) ->
@@ -30,15 +31,19 @@ class Escapee
     context.fillRect(@x, @y, WIDTH, HEIGHT)
 
 escapee = new Escapee(100, 100)
+time_previous = Date.now() # milliseconds
 
 render = ->
   context.clearRect(0, 0, canvas.width, canvas.height)
   escapee.render(context)
 
 animation_loop = ->
-  Physics.apply_gravity(escapee)
-  Physics.apply_velocity(escapee)
+  time_now = Date.now()
+  seconds_elapsed = (time_now - time_previous) / 1000
+  Physics.apply_gravity escapee, seconds_elapsed
+  Physics.apply_velocity escapee, seconds_elapsed
   render()
   webkitRequestAnimationFrame(animation_loop)
+  time_previous = time_now
 
 animation_loop()
