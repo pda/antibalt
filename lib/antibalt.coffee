@@ -64,8 +64,11 @@ objects.push(building_previous = new Building(0, view.height / 2, view.width / 2
 (building_stream = ->
   gap = rr(10, 100)
   x = building_previous.x + building_previous.width + gap
-  y = rr(building_previous.y - 32, building_previous.y + 128)
-  objects.push(building_previous = new Building(x, y, rr(100, view.width / 2)))
+  y = rr(building_previous.y - 64, building_previous.y + 64)
+  y = view.height + 100 if y > view.height + 100
+  y = 100 if y < 100
+  width = rr(100, view.width / 2)
+  objects.push(building_previous = new Building(x, y, width))
   setTimeout building_stream, 1000
 )()
 
