@@ -1,5 +1,5 @@
 (function() {
-  var Color, Escapee, Physics, animation_loop, canvas, context, escapee, render, rgb, rr, rw, time_previous;
+  var Color, Escapee, Physics, animation_loop, canvas, context, objects, rgb, rr, rw, time_previous;
 
   canvas = document.getElementById("antibalt");
 
@@ -56,6 +56,8 @@
 
     _ref = [8, 16], WIDTH = _ref[0], HEIGHT = _ref[1];
 
+    Escapee.prototype.gravity = true;
+
     function Escapee(x, y) {
       this.x = x;
       this.y = y;
@@ -75,22 +77,23 @@
 
   })();
 
-  escapee = new Escapee(100, 100);
+  objects = [];
+
+  objects.push(new Escapee(100, 100));
 
   time_previous = Date.now();
 
-  render = function() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    return escapee.render(context);
-  };
-
   animation_loop = function() {
-    var seconds_elapsed, time_now;
+    var o, seconds_elapsed, time_now, _i, _len;
     time_now = Date.now();
     seconds_elapsed = (time_now - time_previous) / 1000;
-    Physics.apply_gravity(escapee, seconds_elapsed);
-    Physics.apply_velocity(escapee, seconds_elapsed);
-    render();
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    for (_i = 0, _len = objects.length; _i < _len; _i++) {
+      o = objects[_i];
+      if (o.gravity) Physics.apply_gravity(o, seconds_elapsed);
+      if (o.velocity) Physics.apply_velocity(o, seconds_elapsed);
+      o.render(context);
+    }
     webkitRequestAnimationFrame(animation_loop);
     return time_previous = time_now;
   };

@@ -30,6 +30,7 @@ class Color
 
 class Escapee
   [ WIDTH, HEIGHT ] = [ 8, 16 ]
+  gravity: true
   constructor: (@x, @y) ->
     @color = rgb(64, 64, 255)
     @velocity = { x: 0, y: 0 }
@@ -37,19 +38,21 @@ class Escapee
     context.fillStyle = @color
     context.fillRect(@x, @y, WIDTH, HEIGHT)
 
-escapee = new Escapee(100, 100)
-time_previous = Date.now() # milliseconds
+objects = []
 
-render = ->
-  context.clearRect(0, 0, canvas.width, canvas.height)
-  escapee.render(context)
+objects.push new Escapee(100, 100)
+
+
+time_previous = Date.now() # milliseconds
 
 animation_loop = ->
   time_now = Date.now()
   seconds_elapsed = (time_now - time_previous) / 1000
-  Physics.apply_gravity escapee, seconds_elapsed
-  Physics.apply_velocity escapee, seconds_elapsed
-  render()
+  context.clearRect(0, 0, canvas.width, canvas.height)
+  for o in objects
+    Physics.apply_gravity(o, seconds_elapsed) if o.gravity
+    Physics.apply_velocity(o, seconds_elapsed) if o.velocity
+    o.render(context)
   webkitRequestAnimationFrame(animation_loop)
   time_previous = time_now
 
