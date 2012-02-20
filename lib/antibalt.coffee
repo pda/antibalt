@@ -6,7 +6,14 @@ canvas.style.backgroundColor = "black"
 
 context = canvas.getContext("2d")
 
+# RGB color string, e.g. "rgb(128,128,255)"
 rgb = (r, g, b) -> (new Color(r, g, b)).toString()
+
+# random ranged
+rr = (from, to) -> from + Math.floor(Math.random() * (to - from))
+
+# random within
+rw = (mid, radius) -> rr(mid - radius, mid + radius)
 
 Physics =
   GRAVITY: 9.80665 # acceleration: m/s^2

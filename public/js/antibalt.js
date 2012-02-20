@@ -1,5 +1,5 @@
 (function() {
-  var Color, Escapee, Physics, animation_loop, canvas, context, escapee, render, rgb, time_previous;
+  var Color, Escapee, Physics, animation_loop, canvas, context, escapee, render, rgb, rr, rw, time_previous;
 
   canvas = document.getElementById("antibalt");
 
@@ -13,6 +13,14 @@
 
   rgb = function(r, g, b) {
     return (new Color(r, g, b)).toString();
+  };
+
+  rr = function(from, to) {
+    return from + Math.floor(Math.random() * (to - from));
+  };
+
+  rw = function(mid, radius) {
+    return rr(mid - radius, mid + radius);
   };
 
   Physics = {
