@@ -61,7 +61,7 @@
       this.y = y;
       this.color = rgb(64, 64, 255);
       this.velocity = {
-        x: 32,
+        x: rw(32, 8),
         y: 0
       };
     }
