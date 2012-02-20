@@ -43,11 +43,9 @@
   })();
 
   Escapee = (function() {
-    var HEIGHT, WIDTH;
+    var HEIGHT, WIDTH, _ref;
 
-    WIDTH = 8;
-
-    HEIGHT = 16;
+    _ref = [8, 16], WIDTH = _ref[0], HEIGHT = _ref[1];
 
     function Escapee(x, y) {
       this.x = x;

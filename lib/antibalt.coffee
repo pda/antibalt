@@ -21,8 +21,7 @@ class Color
   toString: -> "rgb(#{@r},#{@g},#{@b})"
 
 class Escapee
-  WIDTH = 8
-  HEIGHT = 16
+  [ WIDTH, HEIGHT ] = [ 8, 16 ]
   constructor: (@x, @y) ->
     @color = rgb(64, 64, 255)
     @velocity = { x: 0, y: 0 }
