@@ -40,8 +40,10 @@ class Escapee
 
 objects = []
 
-objects.push new Escapee(100, 100)
-
+(escapee_stream = ->
+  objects.push new Escapee(0, rr(0, canvas.height / 2))
+  setTimeout escapee_stream, rw(500, 300)
+)()
 
 time_previous = Date.now() # milliseconds
 

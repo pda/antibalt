@@ -1,5 +1,5 @@
 (function() {
-  var Color, Escapee, Physics, animation_loop, canvas, context, objects, rgb, rr, rw, time_previous;
+  var Color, Escapee, Physics, animation_loop, canvas, context, escapee_stream, objects, rgb, rr, rw, time_previous;
 
   canvas = document.getElementById("antibalt");
 
@@ -79,7 +79,10 @@
 
   objects = [];
 
-  objects.push(new Escapee(100, 100));
+  (escapee_stream = function() {
+    objects.push(new Escapee(0, rr(0, canvas.height / 2)));
+    return setTimeout(escapee_stream, rw(500, 300));
+  })();
 
   time_previous = Date.now();
 
