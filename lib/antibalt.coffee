@@ -33,7 +33,7 @@ class Escapee
   gravity: true
   constructor: (@x, @y) ->
     @color = rgb(64, 64, 255)
-    @velocity = { x: 0, y: 0 }
+    @velocity = { x: 16, y: 0 }
   render: (context) ->
     context.fillStyle = @color
     context.fillRect(@x, @y, WIDTH, HEIGHT)
