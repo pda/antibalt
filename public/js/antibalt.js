@@ -140,16 +140,22 @@
   time_previous = Date.now();
 
   animation_loop = function() {
-    var i, o, seconds_elapsed, time_now, _len;
+    var gc, i, o, seconds_elapsed, time_now, _i, _len, _len2;
     time_now = Date.now();
     seconds_elapsed = (time_now - time_previous) / 1000;
     view.clear();
     Physics.apply_velocity(view, seconds_elapsed);
+    gc = [];
     for (i = 0, _len = objects.length; i < _len; i++) {
       o = objects[i];
       if (o.gravity) Physics.apply_gravity(o, seconds_elapsed);
       if (o.velocity) Physics.apply_velocity(o, seconds_elapsed);
       if (o.render) o.render(view);
+      if (o.y > view.height) gc.push(i);
+    }
+    for (_i = 0, _len2 = gc.length; _i < _len2; _i++) {
+      i = gc[_i];
+      objects.splice(i, 1);
     }
     webkitRequestAnimationFrame(animation_loop);
     return time_previous = time_now;

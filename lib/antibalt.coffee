@@ -76,10 +76,13 @@ animation_loop = ->
   seconds_elapsed = (time_now - time_previous) / 1000
   view.clear()
   Physics.apply_velocity(view, seconds_elapsed)
+  gc = []
   for o, i in objects
     Physics.apply_gravity(o, seconds_elapsed) if o.gravity
     Physics.apply_velocity(o, seconds_elapsed) if o.velocity
     o.render(view) if o.render
+    gc.push(i) if o.y > view.height
+  objects.splice(i, 1) for i in gc
   webkitRequestAnimationFrame(animation_loop)
   time_previous = time_now
 
