@@ -1,5 +1,5 @@
 (function() {
-  var Building, Color, Escapee, Physics, Viewport, animation_loop, building_previous, building_stream, canvas, escapee_stream, objects, rgb, rr, rw, time_previous, view;
+  var Building, Color, Escapee, Physics, Viewport, animation_loop, apply_platformability, building_previous, building_stream, canvas, escapee_stream, objects, rgb, rr, rw, time_previous, view;
 
   canvas = document.getElementById("antibalt");
 
@@ -50,13 +50,13 @@
   })();
 
   Escapee = (function() {
-    var HEIGHT, WIDTH, _ref;
-
-    _ref = [8, 16], WIDTH = _ref[0], HEIGHT = _ref[1];
 
     Escapee.prototype.gravity = true;
 
+    Escapee.prototype.platformable = true;
+
     function Escapee(x, y) {
+      var _ref;
       this.x = x;
       this.y = y;
       this.color = rgb(64, 64, 255);
@@ -64,10 +64,15 @@
         x: rw(32, 8),
         y: 0
       };
+      _ref = [16, 32], this.width = _ref[0], this.height = _ref[1];
     }
 
     Escapee.prototype.render = function(view) {
-      return view.fillRect(this.x, this.y, WIDTH, HEIGHT, this.color);
+      return view.fillRect(this.x, this.y, this.width, this.height, this.color);
+    };
+
+    Escapee.prototype.jump = function() {
+      return this.velocity.y = rr(-48, -24);
     };
 
     return Escapee;
@@ -75,6 +80,8 @@
   })();
 
   Building = (function() {
+
+    Building.prototype.platform = true;
 
     function Building(x, y, width) {
       this.x = x;
@@ -117,6 +124,30 @@
 
   })();
 
+  apply_platformability = function(o, objects) {
+    var distance_to_edge, other, _i, _len, _results;
+    _results = [];
+    for (_i = 0, _len = objects.length; _i < _len; _i++) {
+      other = objects[_i];
+      if (!other.platform) continue;
+      if ((o.y + o.height) >= other.y) {
+        if (o.x >= other.x && o.x <= (other.x + other.width)) {
+          o.velocity.y = 0;
+          o.y = other.y - o.height;
+        }
+        distance_to_edge = other.x + other.width - o.x;
+        if (distance_to_edge >= 0 && distance_to_edge < 64) {
+          _results.push(o.jump());
+        } else {
+          _results.push(void 0);
+        }
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
+  };
+
   view = new Viewport(canvas);
 
   objects = [];
@@ -153,6 +184,7 @@
       o = objects[i];
       if (o.gravity) Physics.apply_gravity(o, seconds_elapsed);
       if (o.velocity) Physics.apply_velocity(o, seconds_elapsed);
+      if (o.platformable) apply_platformability(o, objects);
       if (o.render) o.render(view);
       if (o.y > view.height) gc.push(i);
     }

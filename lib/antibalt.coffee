@@ -27,15 +27,18 @@ class Color
   toString: -> "rgb(#{@r},#{@g},#{@b})"
 
 class Escapee
-  [ WIDTH, HEIGHT ] = [ 8, 16 ]
   gravity: true
+  platformable: true
   constructor: (@x, @y) ->
     @color = rgb(64, 64, 255)
     @velocity = { x: rw(32, 8), y: 0 }
+    [ @width, @height ] = [ 16, 32 ]
   render: (view) ->
-    view.fillRect(@x, @y, WIDTH, HEIGHT, @color)
+    view.fillRect(@x, @y, @width, @height, @color)
+  jump: -> @velocity.y = rr(-48, -24)
 
 class Building
+  platform: true
   constructor: (@x, @y, @width) ->
   render: (view) ->
     view.fillRect(@x, @y, @width, canvas.height - @y, rgb(32,32,32))
@@ -51,6 +54,17 @@ class Viewport
   fillRect: (x, y, width, height, fillStyle) ->
     @context.fillStyle = fillStyle
     @context.fillRect x - @x, y - @y, width, height
+
+apply_platformability = (o, objects) ->
+  for other in objects
+    continue unless other.platform
+    if (o.y + o.height) >= other.y
+      if o.x >= other.x && o.x <= (other.x + other.width)
+        o.velocity.y = 0
+        o.y = other.y - o.height
+      distance_to_edge = other.x + other.width - o.x
+      if distance_to_edge >= 0 && distance_to_edge < 64
+        o.jump()
 
 view = new Viewport(canvas)
 objects = []
@@ -83,6 +97,7 @@ animation_loop = ->
   for o, i in objects
     Physics.apply_gravity(o, seconds_elapsed) if o.gravity
     Physics.apply_velocity(o, seconds_elapsed) if o.velocity
+    apply_platformability o, objects if o.platformable
     o.render(view) if o.render
     gc.push(i) if o.y > view.height
   objects.splice(i, 1) for i in gc
