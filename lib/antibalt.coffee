@@ -17,7 +17,7 @@ rw = (mid, radius) -> rr(mid - radius, mid + radius)
 
 Physics =
   GRAVITY: 9.80665 # acceleration: m/s^2
-  PPM: 10 # pixels per meter
+  PPM: 16 # pixels per meter
   apply_gravity: (o, sec) ->
     o.velocity.y += Physics.GRAVITY * sec * Physics.PPM
   apply_velocity: (o, sec) ->

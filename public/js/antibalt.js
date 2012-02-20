@@ -25,7 +25,7 @@
 
   Physics = {
     GRAVITY: 9.80665,
-    PPM: 10,
+    PPM: 16,
     apply_gravity: function(o, sec) {
       return o.velocity.y += Physics.GRAVITY * sec * Physics.PPM;
     },
