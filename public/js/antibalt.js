@@ -99,7 +99,7 @@
       _ref = [this.canvas.width, this.canvas.height], this.width = _ref[0], this.height = _ref[1];
       _ref2 = [0, 0], this.x = _ref2[0], this.y = _ref2[1];
       this.velocity = {
-        x: 8,
+        x: 16,
         y: 0
       };
     }

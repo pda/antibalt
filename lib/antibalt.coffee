@@ -45,7 +45,7 @@ class Viewport
     @context = @canvas.getContext("2d")
     [ @width, @height ] = [ @canvas.width, @canvas.height ]
     [ @x, @y ] = [ 0, 0 ]
-    @velocity = { x: 8, y: 0 }
+    @velocity = { x: 16, y: 0 }
   clear: ->
     @context.clearRect(0, 0, @canvas.width, @canvas.height)
   fillRect: (x, y, width, height, fillStyle) ->
