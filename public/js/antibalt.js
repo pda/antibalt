@@ -1,5 +1,5 @@
 (function() {
-  var Building, Color, Escapee, Physics, animation_loop, building_previous, building_stream, canvas, context, escapee_stream, objects, rgb, rr, rw, time_previous;
+  var Building, Color, Escapee, Physics, Viewport, animation_loop, building_previous, building_stream, canvas, escapee_stream, objects, rgb, rr, rw, time_previous, view;
 
   canvas = document.getElementById("antibalt");
 
@@ -8,8 +8,6 @@
   canvas.height = 600;
 
   canvas.style.backgroundColor = "black";
-
-  context = canvas.getContext("2d");
 
   rgb = function(r, g, b) {
     return (new Color(r, g, b)).toString();
@@ -63,14 +61,13 @@
       this.y = y;
       this.color = rgb(64, 64, 255);
       this.velocity = {
-        x: 16,
+        x: 32,
         y: 0
       };
     }
 
-    Escapee.prototype.render = function(context) {
-      context.fillStyle = this.color;
-      return context.fillRect(this.x, this.y, WIDTH, HEIGHT);
+    Escapee.prototype.render = function(view) {
+      return view.fillRect(this.x, this.y, WIDTH, HEIGHT, this.color);
     };
 
     return Escapee;
@@ -85,45 +82,74 @@
       this.width = width;
     }
 
-    Building.prototype.render = function(context) {
-      context.fillStyle = rgb(32, 32, 32);
-      return context.fillRect(this.x, this.y, this.width, canvas.height - this.y);
+    Building.prototype.render = function(view) {
+      return view.fillRect(this.x, this.y, this.width, canvas.height - this.y, rgb(32, 32, 32));
     };
 
     return Building;
 
   })();
 
+  Viewport = (function() {
+
+    function Viewport(canvas) {
+      var _ref, _ref2;
+      this.canvas = canvas;
+      this.context = this.canvas.getContext("2d");
+      _ref = [this.canvas.width, this.canvas.height], this.width = _ref[0], this.height = _ref[1];
+      _ref2 = [0, 0], this.x = _ref2[0], this.y = _ref2[1];
+      this.velocity = {
+        x: 8,
+        y: 0
+      };
+    }
+
+    Viewport.prototype.clear = function() {
+      return this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    };
+
+    Viewport.prototype.fillRect = function(x, y, width, height, fillStyle) {
+      this.context.fillStyle = fillStyle;
+      return this.context.fillRect(x - this.x, y - this.y, width, height);
+    };
+
+    return Viewport;
+
+  })();
+
+  view = new Viewport(canvas);
+
   objects = [];
 
   (escapee_stream = function() {
-    objects.push(new Escapee(0, rr(0, canvas.height / 2)));
+    objects.push(new Escapee(view.x, rr(0, view.height / 2)));
     return setTimeout(escapee_stream, rw(500, 300));
   })();
 
-  objects.push(building_previous = new Building(0, canvas.height / 2, canvas.width / 2));
+  objects.push(building_previous = new Building(0, view.height / 2, view.width / 2));
 
   (building_stream = function() {
     var gap, x, y;
-    gap = 100;
+    gap = rr(10, 100);
     x = building_previous.x + building_previous.width + gap;
-    y = rw(building_previous.y, 100);
-    objects.push(building_previous = new Building(x, y, canvas.width / 4));
+    y = rr(building_previous.y - 32, building_previous.y + 128);
+    objects.push(building_previous = new Building(x, y, rr(100, view.width / 2)));
     return setTimeout(building_stream, 1000);
   })();
 
   time_previous = Date.now();
 
   animation_loop = function() {
-    var o, seconds_elapsed, time_now, _i, _len;
+    var i, o, seconds_elapsed, time_now, _len;
     time_now = Date.now();
     seconds_elapsed = (time_now - time_previous) / 1000;
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    for (_i = 0, _len = objects.length; _i < _len; _i++) {
-      o = objects[_i];
+    view.clear();
+    Physics.apply_velocity(view, seconds_elapsed);
+    for (i = 0, _len = objects.length; i < _len; i++) {
+      o = objects[i];
       if (o.gravity) Physics.apply_gravity(o, seconds_elapsed);
       if (o.velocity) Physics.apply_velocity(o, seconds_elapsed);
-      o.render(context);
+      if (o.render) o.render(view);
     }
     webkitRequestAnimationFrame(animation_loop);
     return time_previous = time_now;
