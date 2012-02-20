@@ -1,5 +1,5 @@
 (function() {
-  var Color, Escapee, Physics, animation_loop, canvas, context, escapee_stream, objects, rgb, rr, rw, time_previous;
+  var Building, Color, Escapee, Physics, animation_loop, building_previous, building_stream, canvas, context, escapee_stream, objects, rgb, rr, rw, time_previous;
 
   canvas = document.getElementById("antibalt");
 
@@ -77,11 +77,39 @@
 
   })();
 
+  Building = (function() {
+
+    function Building(x, y, width) {
+      this.x = x;
+      this.y = y;
+      this.width = width;
+    }
+
+    Building.prototype.render = function(context) {
+      context.fillStyle = rgb(32, 32, 32);
+      return context.fillRect(this.x, this.y, this.width, canvas.height - this.y);
+    };
+
+    return Building;
+
+  })();
+
   objects = [];
 
   (escapee_stream = function() {
     objects.push(new Escapee(0, rr(0, canvas.height / 2)));
     return setTimeout(escapee_stream, rw(500, 300));
+  })();
+
+  objects.push(building_previous = new Building(0, canvas.height / 2, canvas.width / 2));
+
+  (building_stream = function() {
+    var gap, x, y;
+    gap = 100;
+    x = building_previous.x + building_previous.width + gap;
+    y = rw(building_previous.y, 100);
+    objects.push(building_previous = new Building(x, y, canvas.width / 4));
+    return setTimeout(building_stream, 1000);
   })();
 
   time_previous = Date.now();

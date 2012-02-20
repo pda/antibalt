@@ -38,11 +38,26 @@ class Escapee
     context.fillStyle = @color
     context.fillRect(@x, @y, WIDTH, HEIGHT)
 
+class Building
+  constructor: (@x, @y, @width) ->
+  render: (context) ->
+    context.fillStyle = rgb(32,32,32)
+    context.fillRect(@x, @y, @width, canvas.height - @y)
+
 objects = []
 
 (escapee_stream = ->
   objects.push new Escapee(0, rr(0, canvas.height / 2))
   setTimeout escapee_stream, rw(500, 300)
+)()
+
+objects.push(building_previous = new Building(0, canvas.height / 2, canvas.width / 2))
+(building_stream = ->
+  gap = 100
+  x = building_previous.x + building_previous.width + gap
+  y = rw(building_previous.y, 100)
+  objects.push(building_previous = new Building(x, y, canvas.width / 4))
+  setTimeout building_stream, 1000
 )()
 
 time_previous = Date.now() # milliseconds
