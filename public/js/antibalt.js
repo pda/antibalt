@@ -65,7 +65,7 @@
       var _ref;
       this.x = x;
       this.y = y;
-      this.color = Color.string(64, 64, 255);
+      this.color = Color.string(64, 64, rr(192, 255));
       this.velocity = {
         x: rw(32, 8),
         y: 0
@@ -97,6 +97,7 @@
       this.x = x;
       this.y = y;
       this.width = width;
+      this.color = Color.gray(rr(64, 128));
     }
 
     Building.prototype.right_x = function() {
@@ -108,7 +109,7 @@
     };
 
     Building.prototype.render = function(view) {
-      return view.fillRect(this.x, this.y, this.width, canvas.height - this.y, Color.gray(64));
+      return view.fillRect(this.x, this.y, this.width, canvas.height - this.y, this.color);
     };
 
     return Building;

@@ -31,7 +31,7 @@ class Escapee
   gravity: true
   platformable: true
   constructor: (@x, @y) ->
-    @color = Color.string(64, 64, 255)
+    @color = Color.string(64, 64, rr(192, 255))
     @velocity = { x: rw(32, 8), y: 0 }
     [ @width, @height ] = [ 16, 32 ]
   should_gc: (view) -> @x > view.right_x()
@@ -42,10 +42,11 @@ class Escapee
 class Building
   platform: true
   constructor: (@x, @y, @width) ->
+    @color = Color.gray rr 64, 128
   right_x: -> @x + @width
   should_gc: (view) -> @right_x() < view.x
   render: (view) ->
-    view.fillRect(@x, @y, @width, canvas.height - @y, Color.gray(64))
+    view.fillRect(@x, @y, @width, canvas.height - @y, @color)
 
 class EscapeeGenerator
   constructor: (@view, @objects) ->
