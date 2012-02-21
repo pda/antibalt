@@ -5,7 +5,7 @@ canvas.height = 600
 canvas.style.backgroundColor = "black"
 
 # RGB color string, e.g. "rgb(128,128,255)"
-rgb = (r, g, b) -> (new Color(r, g, b)).toString()
+rgb = (r, g, b, a) -> (new Color(r, g, b, a)).toString()
 
 # random ranged
 rr = (from, to) -> from + Math.floor(Math.random() * (to - from))
@@ -23,8 +23,8 @@ Physics =
     o.y += o.velocity.y * sec * Physics.PPM
 
 class Color
-  constructor: (@r, @g, @b) ->
-  toString: -> "rgb(#{@r},#{@g},#{@b})"
+  constructor: (@r, @g, @b, @a = 1.0) ->
+  toString: -> "rgba(#{@r},#{@g},#{@b},#{@a})"
 
 class Escapee
   gravity: true

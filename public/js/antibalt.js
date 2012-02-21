@@ -9,8 +9,8 @@
 
   canvas.style.backgroundColor = "black";
 
-  rgb = function(r, g, b) {
-    return (new Color(r, g, b)).toString();
+  rgb = function(r, g, b, a) {
+    return (new Color(r, g, b, a)).toString();
   };
 
   rr = function(from, to) {
@@ -35,14 +35,15 @@
 
   Color = (function() {
 
-    function Color(r, g, b) {
+    function Color(r, g, b, a) {
       this.r = r;
       this.g = g;
       this.b = b;
+      this.a = a != null ? a : 1.0;
     }
 
     Color.prototype.toString = function() {
-      return "rgb(" + this.r + "," + this.g + "," + this.b + ")";
+      return "rgba(" + this.r + "," + this.g + "," + this.b + "," + this.a + ")";
     };
 
     return Color;
