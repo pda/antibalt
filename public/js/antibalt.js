@@ -1,5 +1,5 @@
 (function() {
-  var Building, Color, Escapee, Physics, Viewport, animation_loop, apply_platformability, building_previous, building_stream, canvas, escapee_stream, objects, rgb, rr, rw, time_previous, view;
+  var Building, Color, DebugInfo, Escapee, Physics, Viewport, animation_loop, apply_platformability, building_previous, building_stream, canvas, escapee_stream, objects, rgb, rr, rw, time_previous, view;
 
   canvas = document.getElementById("antibalt");
 
@@ -98,6 +98,53 @@
 
   })();
 
+  DebugInfo = (function() {
+
+    DebugInfo.prototype.width = 200;
+
+    DebugInfo.prototype.height = 100;
+
+    DebugInfo.prototype.margin = 10;
+
+    DebugInfo.prototype.padding = 10;
+
+    DebugInfo.prototype.lineHeight = 16;
+
+    function DebugInfo(view, objects) {
+      this.view = view;
+      this.objects = objects;
+      this.x = this.view.width - this.width - this.margin;
+      this.y = this.view.height - this.height - this.margin;
+    }
+
+    DebugInfo.prototype.write = function(view, lines) {
+      var i, line, _len, _results;
+      view.context.font = "12px Menlo";
+      view.context.fillStyle = rgb(0, 0, 0);
+      _results = [];
+      for (i = 0, _len = lines.length; i < _len; i++) {
+        line = lines[i];
+        _results.push(view.context.fillText(line, this.x + this.padding, this.y + this.padding + this.lineHeight + i * this.lineHeight));
+      }
+      return _results;
+    };
+
+    DebugInfo.prototype.render = function(view) {
+      view.context.fillStyle = rgb(255, 255, 255, 0.5);
+      view.context.fillRect(this.x, this.y, this.width, this.height);
+      return this.write(view, [
+        "objects: " + objects.length, "platforms: " + _(objects).filter(function(o) {
+          return o.platform;
+        }).length, "gravitables: " + _(objects).filter(function(o) {
+          return o.gravity;
+        }).length
+      ]);
+    };
+
+    return DebugInfo;
+
+  })();
+
   Viewport = (function() {
 
     function Viewport(canvas) {
@@ -152,6 +199,8 @@
   view = new Viewport(canvas);
 
   objects = [];
+
+  objects.push(new DebugInfo(view, objects));
 
   (escapee_stream = function() {
     objects.unshift(new Escapee(view.x, rr(0, view.height / 2)));

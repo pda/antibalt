@@ -43,6 +43,29 @@ class Building
   render: (view) ->
     view.fillRect(@x, @y, @width, canvas.height - @y, rgb(32,32,32))
 
+class DebugInfo
+  width: 200
+  height: 100
+  margin: 10
+  padding: 10
+  lineHeight: 16
+  constructor: (@view, @objects) ->
+    @x = @view.width - @width - @margin
+    @y = @view.height - @height - @margin
+  write: (view, lines) ->
+    view.context.font = "12px Menlo"
+    view.context.fillStyle = rgb(0,0,0)
+    for line, i in lines
+      view.context.fillText line, @x + @padding, @y + @padding + @lineHeight + i * @lineHeight
+  render: (view) ->
+    view.context.fillStyle = rgb(255,255,255, 0.5)
+    view.context.fillRect @x, @y, @width, @height
+    this.write view, [
+      "objects: #{objects.length}"
+      "platforms: " + _(objects).filter((o) -> o.platform).length
+      "gravitables: " + _(objects).filter((o) -> o.gravity).length
+    ]
+
 class Viewport
   constructor: (@canvas) ->
     @context = @canvas.getContext("2d")
@@ -68,6 +91,8 @@ apply_platformability = (o, objects) ->
 
 view = new Viewport(canvas)
 objects = []
+
+objects.push new DebugInfo(view, objects)
 
 (escapee_stream = ->
   objects.unshift new Escapee(view.x, rr(0, view.height / 2))
