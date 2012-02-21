@@ -1,14 +1,6 @@
 (function() {
-  var Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, GarbageCollector, Physics, Viewport, animation_loop, apply_platformability, canvas, objects, rr, rw, time_previous, view,
+  var Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, GarbageCollector, Physics, Viewport, animation_loop, apply_platformability, objects, rr, rw, time_previous, view,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  canvas = document.getElementById("antibalt");
-
-  canvas.width = 1600;
-
-  canvas.height = 600;
-
-  canvas.style.backgroundColor = "black";
 
   Physics = {
     GRAVITY: 9.80665,
@@ -117,7 +109,7 @@
     };
 
     Building.prototype.render = function(view) {
-      return view.fillRect(this.x, this.y, this.width, canvas.height - this.y, this.color);
+      return view.fillRect(this.x, this.y, this.width, view.height - this.y, this.color);
     };
 
     return Building;
@@ -249,9 +241,14 @@
 
   Viewport = (function() {
 
-    function Viewport(canvas) {
+    function Viewport(width, height) {
       var _ref, _ref2;
-      this.canvas = canvas;
+      this.width = width;
+      this.height = height;
+      this.canvas = document.getElementById("antibalt");
+      this.canvas.width = this.width;
+      this.canvas.height = this.height;
+      this.canvas.style.backgroundColor = "black";
       this.context = this.canvas.getContext("2d");
       _ref = [this.canvas.width, this.canvas.height], this.width = _ref[0], this.height = _ref[1];
       _ref2 = [0, 0], this.x = _ref2[0], this.y = _ref2[1];
@@ -351,7 +348,7 @@
     return _results;
   };
 
-  view = new Viewport(canvas);
+  view = new Viewport(1600, 600);
 
   objects = [];
 

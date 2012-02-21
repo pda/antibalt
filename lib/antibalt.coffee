@@ -1,13 +1,4 @@
 ##
-# Random stuff to refactor
-
-canvas = document.getElementById("antibalt")
-
-canvas.width = 1600
-canvas.height = 600
-canvas.style.backgroundColor = "black"
-
-##
 # Classes
 
 Physics =
@@ -48,7 +39,7 @@ class Building
   right_x: -> @x + @width
   should_gc: (view) -> @right_x() < view.x
   render: (view) ->
-    view.fillRect(@x, @y, @width, canvas.height - @y, @color)
+    view.fillRect(@x, @y, @width, view.height - @y, @color)
 
 class EscapeeGenerator
   constructor: (@view, @objects) ->
@@ -97,7 +88,11 @@ class DebugInfo
     ]
 
 class Viewport
-  constructor: (@canvas) ->
+  constructor: (@width, @height) ->
+    @canvas = document.getElementById("antibalt")
+    @canvas.width = @width
+    @canvas.height = @height
+    @canvas.style.backgroundColor = "black"
     @context = @canvas.getContext("2d")
     [ @width, @height ] = [ @canvas.width, @canvas.height ]
     [ @x, @y ] = [ 0, 0 ]
@@ -149,7 +144,7 @@ apply_platformability = (o, objects) ->
       if distance_to_edge >= 0 && distance_to_edge < 100
         o.jump()
 
-view = new Viewport(canvas)
+view = new Viewport(1600, 600)
 objects = []
 
 objects.push new DebugInfo(view, objects)
