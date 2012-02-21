@@ -1,5 +1,5 @@
 (function() {
-  var Building, BuildingGenerator, Color, DebugInfo, Escapee, Physics, Viewport, animation_loop, apply_platformability, canvas, escapee_stream, objects, rgb, rr, rw, time_previous, view,
+  var Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, Physics, Viewport, animation_loop, apply_platformability, canvas, objects, rgb, rr, rw, time_previous, view,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   canvas = document.getElementById("antibalt");
@@ -108,6 +108,27 @@
     };
 
     return Building;
+
+  })();
+
+  EscapeeGenerator = (function() {
+
+    function EscapeeGenerator(view, objects) {
+      this.view = view;
+      this.objects = objects;
+      this.keep_escaping = __bind(this.keep_escaping, this);
+    }
+
+    EscapeeGenerator.prototype.start = function() {
+      return this.keep_escaping();
+    };
+
+    EscapeeGenerator.prototype.keep_escaping = function() {
+      objects.unshift(new Escapee(this.view.x, rr(0, this.view.height / 2)));
+      return _.delay(this.keep_escaping, rw(500, 300));
+    };
+
+    return EscapeeGenerator;
 
   })();
 
@@ -274,10 +295,7 @@
 
   objects.push(new DebugInfo(view, objects));
 
-  (escapee_stream = function() {
-    objects.unshift(new Escapee(view.x, rr(0, view.height / 2)));
-    return setTimeout(escapee_stream, rw(500, 300));
-  })();
+  new EscapeeGenerator(view, objects).start();
 
   new BuildingGenerator(view, objects).start();
 

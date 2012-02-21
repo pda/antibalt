@@ -46,6 +46,13 @@ class Building
   render: (view) ->
     view.fillRect(@x, @y, @width, canvas.height - @y, rgb(32,32,32))
 
+class EscapeeGenerator
+  constructor: (@view, @objects) ->
+  start: -> @keep_escaping()
+  keep_escaping: =>
+    objects.unshift new Escapee(@view.x, rr(0, @view.height / 2))
+    _.delay @keep_escaping, rw(500, 300)
+
 class BuildingGenerator
   constructor: (@view, @objects) ->
   start: ->
@@ -114,11 +121,7 @@ objects = []
 
 objects.push new DebugInfo(view, objects)
 
-(escapee_stream = ->
-  objects.unshift new Escapee(view.x, rr(0, view.height / 2))
-  setTimeout escapee_stream, rw(500, 300)
-)()
-
+new EscapeeGenerator(view, objects).start()
 new BuildingGenerator(view, objects).start()
 
 time_previous = Date.now() # milliseconds
