@@ -10,14 +10,6 @@
 
   canvas.style.backgroundColor = "black";
 
-  rr = function(from, to) {
-    return from + Math.floor(Math.random() * (to - from));
-  };
-
-  rw = function(mid, radius) {
-    return rr(mid - radius, mid + radius);
-  };
-
   Physics = {
     GRAVITY: 9.80665,
     PPM: 16,
@@ -276,6 +268,14 @@
     return Viewport;
 
   })();
+
+  rr = function(from, to) {
+    return from + Math.floor(Math.random() * (to - from));
+  };
+
+  rw = function(mid, radius) {
+    return rr(mid - radius, mid + radius);
+  };
 
   apply_platformability = function(o, objects) {
     var distance_to_edge, other, _i, _len, _results;

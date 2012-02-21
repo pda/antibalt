@@ -1,14 +1,14 @@
+##
+# Random stuff to refactor
+
 canvas = document.getElementById("antibalt")
 
 canvas.width = 1600
 canvas.height = 600
 canvas.style.backgroundColor = "black"
 
-# random ranged
-rr = (from, to) -> from + Math.floor(Math.random() * (to - from))
-
-# random within
-rw = (mid, radius) -> rr(mid - radius, mid + radius)
+##
+# Classes
 
 Physics =
   GRAVITY: 9.80665 # acceleration: m/s^2
@@ -106,6 +106,18 @@ class Viewport
     @context.fillStyle = fillStyle
     @context.fillRect x - @x, y - @y, width, height
 
+##
+# Helper functions
+
+# random ranged
+rr = (from, to) -> from + Math.floor(Math.random() * (to - from))
+
+# random within
+rw = (mid, radius) -> rr(mid - radius, mid + radius)
+
+##
+# Random stuff to refactor
+
 apply_platformability = (o, objects) ->
   for other in objects
     continue unless other.platform
@@ -142,5 +154,8 @@ animation_loop = ->
   objects.splice(i, 1) for i in gc
   webkitRequestAnimationFrame(animation_loop)
   time_previous = time_now
+
+##
+# The game!
 
 animation_loop()
