@@ -1,5 +1,5 @@
 (function() {
-  var Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, Physics, Viewport, animation_loop, apply_platformability, canvas, objects, rr, rw, time_previous, view,
+  var Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, GarbageCollector, Physics, Viewport, animation_loop, apply_platformability, canvas, objects, rr, rw, time_previous, view,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   canvas = document.getElementById("antibalt");
@@ -270,6 +270,47 @@
 
   })();
 
+  GarbageCollector = (function() {
+
+    function GarbageCollector(view, objects) {
+      this.view = view;
+      this.objects = objects;
+      this.keep_collecting = __bind(this.keep_collecting, this);
+    }
+
+    GarbageCollector.prototype.start = function() {
+      return this.keep_collecting();
+    };
+
+    GarbageCollector.prototype.keep_collecting = function() {
+      this.collect();
+      return _.delay(this.keep_collecting, 100);
+    };
+
+    GarbageCollector.prototype.collect = function() {
+      var i, indices, o, _i, _len, _len2, _ref, _results;
+      indices = [];
+      _ref = this.objects;
+      for (i = 0, _len = _ref.length; i < _len; i++) {
+        o = _ref[i];
+        if (o.should_gc && o.should_gc(this.view)) indices.push(i);
+      }
+      _results = [];
+      for (_i = 0, _len2 = indices.length; _i < _len2; _i++) {
+        i = indices[_i];
+        if (this.objects[i].should_gc) {
+          _results.push(this.objects.splice(i, 1));
+        } else {
+          _results.push(console.log("BAD GC: %o", this.objects[i]));
+        }
+      }
+      return _results;
+    };
+
+    return GarbageCollector;
+
+  })();
+
   rr = function(from, to) {
     return from + Math.floor(Math.random() * (to - from));
   };
@@ -312,26 +353,22 @@
 
   new BuildingGenerator(view, objects).start();
 
+  new GarbageCollector(view, objects).start();
+
   time_previous = Date.now();
 
   animation_loop = function() {
-    var gc, i, o, seconds_elapsed, time_now, _i, _len, _len2;
+    var i, o, seconds_elapsed, time_now, _len;
     time_now = Date.now();
     seconds_elapsed = (time_now - time_previous) / 1000;
     view.clear();
     Physics.apply_velocity(view, seconds_elapsed);
-    gc = [];
     for (i = 0, _len = objects.length; i < _len; i++) {
       o = objects[i];
       if (o.gravity) Physics.apply_gravity(o, seconds_elapsed);
       if (o.velocity) Physics.apply_velocity(o, seconds_elapsed);
       if (o.platformable) apply_platformability(o, objects);
       if (o.render) o.render(view);
-      if (o.should_gc && o.should_gc(view)) gc.push(i);
-    }
-    for (_i = 0, _len2 = gc.length; _i < _len2; _i++) {
-      i = gc[_i];
-      objects.splice(i, 1);
     }
     webkitRequestAnimationFrame(animation_loop);
     return time_previous = time_now;

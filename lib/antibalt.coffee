@@ -107,6 +107,23 @@ class Viewport
     @context.fillStyle = fillStyle
     @context.fillRect x - @x, y - @y, width, height
 
+class GarbageCollector
+  constructor: (@view, @objects) ->
+  start: -> @keep_collecting()
+  keep_collecting: =>
+    @collect()
+    _.delay @keep_collecting, 100
+  collect: ->
+    # buggy; indices may change between mark and sweep!
+    indices = []
+    for o, i in @objects
+      indices.push i if o.should_gc && o.should_gc(@view)
+    for i in indices
+      if @objects[i].should_gc
+        @objects.splice(i, 1)
+      else
+        console.log "BAD GC: %o", @objects[i]
+
 ##
 # Helper functions
 
@@ -137,6 +154,7 @@ objects.push new DebugInfo(view, objects)
 
 new EscapeeGenerator(view, objects).start()
 new BuildingGenerator(view, objects).start()
+new GarbageCollector(view, objects).start()
 
 time_previous = Date.now() # milliseconds
 
@@ -145,14 +163,11 @@ animation_loop = ->
   seconds_elapsed = (time_now - time_previous) / 1000
   view.clear()
   Physics.apply_velocity(view, seconds_elapsed)
-  gc = []
   for o, i in objects
     Physics.apply_gravity(o, seconds_elapsed) if o.gravity
     Physics.apply_velocity(o, seconds_elapsed) if o.velocity
     apply_platformability o, objects if o.platformable
     o.render(view) if o.render
-    gc.push(i) if o.should_gc && o.should_gc(view)
-  objects.splice(i, 1) for i in gc
   webkitRequestAnimationFrame(animation_loop)
   time_previous = time_now
 
