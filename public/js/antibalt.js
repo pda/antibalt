@@ -326,11 +326,11 @@
       other = objects[_i];
       if (!other.platform) continue;
       if ((o.y + o.height) >= other.y) {
-        if (o.x >= other.x && o.x <= (other.x + other.width)) {
+        if (o.x >= other.x && o.x <= other.right_x()) {
           o.velocity.y = 0;
           o.y = other.y - o.height;
         }
-        distance_to_edge = other.x + other.width - o.x;
+        distance_to_edge = other.right_x() - o.x;
         if (distance_to_edge >= 0 && distance_to_edge < 100) {
           _results.push(o.jump());
         } else {
