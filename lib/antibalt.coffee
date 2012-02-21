@@ -127,7 +127,7 @@ apply_platformability = (o, objects) ->
         o.velocity.y = 0
         o.y = other.y - o.height
       distance_to_edge = other.x + other.width - o.x
-      if distance_to_edge >= 0 && distance_to_edge < 64
+      if distance_to_edge >= 0 && distance_to_edge < 100
         o.jump()
 
 view = new Viewport(canvas)

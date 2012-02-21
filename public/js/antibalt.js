@@ -290,7 +290,7 @@
           o.y = other.y - o.height;
         }
         distance_to_edge = other.x + other.width - o.x;
-        if (distance_to_edge >= 0 && distance_to_edge < 64) {
+        if (distance_to_edge >= 0 && distance_to_edge < 100) {
           _results.push(o.jump());
         } else {
           _results.push(void 0);
