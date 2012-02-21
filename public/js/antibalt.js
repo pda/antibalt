@@ -68,6 +68,10 @@
       _ref = [16, 32], this.width = _ref[0], this.height = _ref[1];
     }
 
+    Escapee.prototype.should_gc = function(view) {
+      return this.x > view.right_x();
+    };
+
     Escapee.prototype.render = function(view) {
       return view.fillRect(this.x, this.y, this.width, this.height, this.color);
     };
@@ -89,6 +93,14 @@
       this.y = y;
       this.width = width;
     }
+
+    Building.prototype.right_x = function() {
+      return this.x + this.width;
+    };
+
+    Building.prototype.should_gc = function(view) {
+      return this.right_x() < view.x;
+    };
 
     Building.prototype.render = function(view) {
       return view.fillRect(this.x, this.y, this.width, canvas.height - this.y, rgb(32, 32, 32));
@@ -158,6 +170,10 @@
         y: 0
       };
     }
+
+    Viewport.prototype.right_x = function() {
+      return this.x + this.width;
+    };
 
     Viewport.prototype.clear = function() {
       return this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -236,7 +252,7 @@
       if (o.velocity) Physics.apply_velocity(o, seconds_elapsed);
       if (o.platformable) apply_platformability(o, objects);
       if (o.render) o.render(view);
-      if (o.y > view.height) gc.push(i);
+      if (o.should_gc && o.should_gc(view)) gc.push(i);
     }
     for (_i = 0, _len2 = gc.length; _i < _len2; _i++) {
       i = gc[_i];

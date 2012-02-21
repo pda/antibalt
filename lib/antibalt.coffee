@@ -33,6 +33,7 @@ class Escapee
     @color = rgb(64, 64, 255)
     @velocity = { x: rw(32, 8), y: 0 }
     [ @width, @height ] = [ 16, 32 ]
+  should_gc: (view) -> @x > view.right_x()
   render: (view) ->
     view.fillRect(@x, @y, @width, @height, @color)
   jump: -> @velocity.y = rr(-48, -24)
@@ -40,6 +41,8 @@ class Escapee
 class Building
   platform: true
   constructor: (@x, @y, @width) ->
+  right_x: -> @x + @width
+  should_gc: (view) -> @right_x() < view.x
   render: (view) ->
     view.fillRect(@x, @y, @width, canvas.height - @y, rgb(32,32,32))
 
@@ -72,6 +75,7 @@ class Viewport
     [ @width, @height ] = [ @canvas.width, @canvas.height ]
     [ @x, @y ] = [ 0, 0 ]
     @velocity = { x: 16, y: 0 }
+  right_x: -> @x + @width
   clear: ->
     @context.clearRect(0, 0, @canvas.width, @canvas.height)
   fillRect: (x, y, width, height, fillStyle) ->
@@ -124,7 +128,7 @@ animation_loop = ->
     Physics.apply_velocity(o, seconds_elapsed) if o.velocity
     apply_platformability o, objects if o.platformable
     o.render(view) if o.render
-    gc.push(i) if o.y > view.height
+    gc.push(i) if o.should_gc && o.should_gc(view)
   objects.splice(i, 1) for i in gc
   webkitRequestAnimationFrame(animation_loop)
   time_previous = time_now
