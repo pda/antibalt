@@ -1,0 +1,3 @@
+[submodule "public/vendor/underscore"]
+	path = public/vendor/underscore
+	url = git://github.com/documentcloud/underscore.git
