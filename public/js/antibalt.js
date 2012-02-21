@@ -1,5 +1,6 @@
 (function() {
-  var Building, Color, DebugInfo, Escapee, Physics, Viewport, animation_loop, apply_platformability, building_previous, building_stream, canvas, escapee_stream, objects, rgb, rr, rw, time_previous, view;
+  var Building, BuildingGenerator, Color, DebugInfo, Escapee, Physics, Viewport, animation_loop, apply_platformability, canvas, escapee_stream, objects, rgb, rr, rw, time_previous, view,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   canvas = document.getElementById("antibalt");
 
@@ -107,6 +108,61 @@
     };
 
     return Building;
+
+  })();
+
+  BuildingGenerator = (function() {
+
+    function BuildingGenerator(view, objects) {
+      this.view = view;
+      this.objects = objects;
+      this.keep_building = __bind(this.keep_building, this);
+    }
+
+    BuildingGenerator.prototype.start = function() {
+      this.objects.unshift(this.latest = new Building(0, view.height / 2, view.width / 2));
+      return this.keep_building();
+    };
+
+    BuildingGenerator.prototype.keep_building = function() {
+      this.fill_screen();
+      return _.delay(this.keep_building, 500);
+    };
+
+    BuildingGenerator.prototype.fill_screen = function() {
+      var _results;
+      _results = [];
+      while (this.latest.right_x() < this.view.right_x() + 100) {
+        _results.push(this.build());
+      }
+      return _results;
+    };
+
+    BuildingGenerator.prototype.build = function() {
+      return this.objects.unshift(this.latest = new Building(this.x(), this.y(), this.width()));
+    };
+
+    BuildingGenerator.prototype.gap = function() {
+      return rr(10, 100);
+    };
+
+    BuildingGenerator.prototype.width = function() {
+      return rr(100, this.view.width / 2);
+    };
+
+    BuildingGenerator.prototype.x = function() {
+      return this.latest.right_x() + this.gap();
+    };
+
+    BuildingGenerator.prototype.y = function() {
+      return this.bounded(rr(this.latest.y - 64, this.latest.y + 64), 100, this.view.height - 100);
+    };
+
+    BuildingGenerator.prototype.bounded = function(i, min, max) {
+      return _.max([_.min([i, max]), min]);
+    };
+
+    return BuildingGenerator;
 
   })();
 
@@ -223,19 +279,7 @@
     return setTimeout(escapee_stream, rw(500, 300));
   })();
 
-  objects.unshift(building_previous = new Building(0, view.height / 2, view.width / 2));
-
-  (building_stream = function() {
-    var gap, width, x, y;
-    gap = rr(10, 100);
-    x = building_previous.x + building_previous.width + gap;
-    y = rr(building_previous.y - 64, building_previous.y + 64);
-    if (y > view.height + 100) y = view.height + 100;
-    if (y < 100) y = 100;
-    width = rr(100, view.width / 2);
-    objects.unshift(building_previous = new Building(x, y, width));
-    return setTimeout(building_stream, 1000);
-  })();
+  new BuildingGenerator(view, objects).start();
 
   time_previous = Date.now();
 

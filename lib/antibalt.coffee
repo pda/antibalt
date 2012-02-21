@@ -46,6 +46,22 @@ class Building
   render: (view) ->
     view.fillRect(@x, @y, @width, canvas.height - @y, rgb(32,32,32))
 
+class BuildingGenerator
+  constructor: (@view, @objects) ->
+  start: ->
+    @objects.unshift @latest = new Building(0, view.height / 2, view.width / 2)
+    @keep_building()
+  keep_building: =>
+    @fill_screen()
+    _.delay @keep_building, 500
+  fill_screen: -> @build() while @latest.right_x() < @view.right_x() + 100
+  build: -> @objects.unshift @latest = new Building(@x(), @y(), @width())
+  gap: -> rr 10, 100
+  width: -> rr 100, @view.width / 2
+  x: -> @latest.right_x() + @gap()
+  y: -> @bounded rr(@latest.y - 64, @latest.y + 64), 100, @view.height - 100
+  bounded: (i, min, max) -> _.max([ _.min([ i, max ]), min])
+
 class DebugInfo
   width: 200
   height: 100
@@ -103,17 +119,7 @@ objects.push new DebugInfo(view, objects)
   setTimeout escapee_stream, rw(500, 300)
 )()
 
-objects.unshift(building_previous = new Building(0, view.height / 2, view.width / 2))
-(building_stream = ->
-  gap = rr(10, 100)
-  x = building_previous.x + building_previous.width + gap
-  y = rr(building_previous.y - 64, building_previous.y + 64)
-  y = view.height + 100 if y > view.height + 100
-  y = 100 if y < 100
-  width = rr(100, view.width / 2)
-  objects.unshift(building_previous = new Building(x, y, width))
-  setTimeout building_stream, 1000
-)()
+new BuildingGenerator(view, objects).start()
 
 time_previous = Date.now() # milliseconds
 
