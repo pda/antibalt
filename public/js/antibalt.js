@@ -73,6 +73,14 @@
       _ref = [16, 32], this.width = _ref[0], this.height = _ref[1];
     }
 
+    Escapee.prototype.bottom_y = function() {
+      return this.y + this.height;
+    };
+
+    Escapee.prototype.set_bottom_y = function(y) {
+      return this.y = y - this.height;
+    };
+
     Escapee.prototype.should_gc = function(view) {
       return this.x > view.right_x();
     };
@@ -325,10 +333,10 @@
     for (_i = 0, _len = objects.length; _i < _len; _i++) {
       other = objects[_i];
       if (!other.platform) continue;
-      if ((o.y + o.height) >= other.y) {
+      if (o.bottom_y() >= other.y) {
         if (o.x >= other.x && o.x <= other.right_x()) {
           o.velocity.y = 0;
-          o.y = other.y - o.height;
+          o.set_bottom_y(other.y);
         }
         distance_to_edge = other.right_x() - o.x;
         if (distance_to_edge >= 0 && distance_to_edge < 100) {

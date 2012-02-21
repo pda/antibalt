@@ -34,6 +34,8 @@ class Escapee
     @color = Color.string(64, 64, rr(192, 255))
     @velocity = { x: rw(32, 8), y: 0 }
     [ @width, @height ] = [ 16, 32 ]
+  bottom_y: -> @y + @height
+  set_bottom_y: (y) -> @y = y - @height
   should_gc: (view) -> @x > view.right_x()
   render: (view) ->
     view.fillRect(@x, @y, @width, @height, @color)
@@ -139,10 +141,10 @@ rw = (mid, radius) -> rr(mid - radius, mid + radius)
 apply_platformability = (o, objects) ->
   for other in objects
     continue unless other.platform
-    if (o.y + o.height) >= other.y
+    if o.bottom_y() >= other.y
       if o.x >= other.x && o.x <= other.right_x()
         o.velocity.y = 0
-        o.y = other.y - o.height
+        o.set_bottom_y other.y
       distance_to_edge = other.right_x() - o.x
       if distance_to_edge >= 0 && distance_to_edge < 100
         o.jump()
