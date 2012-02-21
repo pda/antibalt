@@ -1,5 +1,5 @@
 (function() {
-  var Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, Physics, Viewport, animation_loop, apply_platformability, canvas, objects, rgb, rr, rw, time_previous, view,
+  var Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, Physics, Viewport, animation_loop, apply_platformability, canvas, objects, rr, rw, time_previous, view,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   canvas = document.getElementById("antibalt");
@@ -9,10 +9,6 @@
   canvas.height = 600;
 
   canvas.style.backgroundColor = "black";
-
-  rgb = function(r, g, b, a) {
-    return (new Color(r, g, b, a)).toString();
-  };
 
   rr = function(from, to) {
     return from + Math.floor(Math.random() * (to - from));
@@ -47,6 +43,22 @@
       return "rgba(" + this.r + "," + this.g + "," + this.b + "," + this.a + ")";
     };
 
+    Color.string = function(r, g, b, a) {
+      return new Color(r, g, b, a).toString();
+    };
+
+    Color.black = function(a) {
+      return Color.string(0, 0, 0, a);
+    };
+
+    Color.white = function(a) {
+      return Color.string(255, 255, 255, a);
+    };
+
+    Color.gray = function(v, a) {
+      return Color.string(v, v, v, a);
+    };
+
     return Color;
 
   })();
@@ -61,7 +73,7 @@
       var _ref;
       this.x = x;
       this.y = y;
-      this.color = rgb(64, 64, 255);
+      this.color = Color.string(64, 64, 255);
       this.velocity = {
         x: rw(32, 8),
         y: 0
@@ -104,7 +116,7 @@
     };
 
     Building.prototype.render = function(view) {
-      return view.fillRect(this.x, this.y, this.width, canvas.height - this.y, rgb(32, 32, 32));
+      return view.fillRect(this.x, this.y, this.width, canvas.height - this.y, Color.gray(64));
     };
 
     return Building;
@@ -209,7 +221,7 @@
     DebugInfo.prototype.write = function(view, lines) {
       var i, line, _len, _results;
       view.context.font = "12px Menlo";
-      view.context.fillStyle = rgb(0, 0, 0);
+      view.context.fillStyle = Color.black();
       _results = [];
       for (i = 0, _len = lines.length; i < _len; i++) {
         line = lines[i];
@@ -219,7 +231,7 @@
     };
 
     DebugInfo.prototype.render = function(view) {
-      view.context.fillStyle = rgb(255, 255, 255, 0.5);
+      view.context.fillStyle = Color.white(0.5);
       view.context.fillRect(this.x, this.y, this.width, this.height);
       return this.write(view, [
         "objects: " + objects.length, "platforms: " + _(objects).filter(function(o) {

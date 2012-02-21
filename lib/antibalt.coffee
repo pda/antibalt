@@ -4,9 +4,6 @@ canvas.width = 1600
 canvas.height = 600
 canvas.style.backgroundColor = "black"
 
-# RGB color string, e.g. "rgb(128,128,255)"
-rgb = (r, g, b, a) -> (new Color(r, g, b, a)).toString()
-
 # random ranged
 rr = (from, to) -> from + Math.floor(Math.random() * (to - from))
 
@@ -25,12 +22,16 @@ Physics =
 class Color
   constructor: (@r, @g, @b, @a = 1.0) ->
   toString: -> "rgba(#{@r},#{@g},#{@b},#{@a})"
+  @string: (r, g, b, a) -> new Color(r, g, b, a).toString()
+  @black: (a) -> Color.string(0, 0, 0, a)
+  @white: (a) -> Color.string(255, 255, 255, a)
+  @gray: (v, a) -> Color.string(v, v, v, a)
 
 class Escapee
   gravity: true
   platformable: true
   constructor: (@x, @y) ->
-    @color = rgb(64, 64, 255)
+    @color = Color.string(64, 64, 255)
     @velocity = { x: rw(32, 8), y: 0 }
     [ @width, @height ] = [ 16, 32 ]
   should_gc: (view) -> @x > view.right_x()
@@ -44,7 +45,7 @@ class Building
   right_x: -> @x + @width
   should_gc: (view) -> @right_x() < view.x
   render: (view) ->
-    view.fillRect(@x, @y, @width, canvas.height - @y, rgb(32,32,32))
+    view.fillRect(@x, @y, @width, canvas.height - @y, Color.gray(64))
 
 class EscapeeGenerator
   constructor: (@view, @objects) ->
@@ -80,11 +81,11 @@ class DebugInfo
     @y = @view.height - @height - @margin
   write: (view, lines) ->
     view.context.font = "12px Menlo"
-    view.context.fillStyle = rgb(0,0,0)
+    view.context.fillStyle = Color.black()
     for line, i in lines
       view.context.fillText line, @x + @padding, @y + @padding + @lineHeight + i * @lineHeight
   render: (view) ->
-    view.context.fillStyle = rgb(255,255,255, 0.5)
+    view.context.fillStyle = Color.white(0.5)
     view.context.fillRect @x, @y, @width, @height
     this.write view, [
       "objects: #{objects.length}"
