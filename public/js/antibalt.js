@@ -1,5 +1,5 @@
 (function() {
-  var AbstractGenerator, Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, GarbageCollector, PhysicalObject, Physics, Viewport, animation_loop, platform_detection, rr, rw, splat_detection, time_previous, view,
+  var AbstractGenerator, Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, Explosion, GarbageCollector, Particle, PhysicalObject, Physics, Viewport, animation_loop, platform_detection, rr, rw, splat_detection, time_previous, view,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -99,6 +99,7 @@
       var _ref;
       this.x = x;
       this.y = y;
+      this.color = Color.string(64, 64, rr(192, 255));
       this.velocity = {
         x: rw(32, 8),
         y: 0
@@ -111,17 +112,7 @@
     };
 
     Escapee.prototype.render = function(view) {
-      return view.fillRect(this.x, this.y, this.width, this.height, this.color());
-    };
-
-    Escapee.prototype.color = function() {
-      if (this.dead) {
-        return Color.string(255, 0, 0);
-      } else if (this.gravity) {
-        return Color.string(0, 0, 255);
-      } else {
-        return Color.string(0, 255, 0);
-      }
+      return view.fillRect(this.x, this.y, this.width, this.height, this.color);
     };
 
     Escapee.prototype.jump = function() {
@@ -129,13 +120,14 @@
       return this.velocity.y = rr(-48, -24);
     };
 
-    Escapee.prototype.splat = function() {
+    Escapee.prototype.splat = function(objects) {
       this.dead = true;
       this.gravity = true;
-      return this.velocity = {
+      this.velocity = {
         x: 0,
         y: 0
       };
+      return new Explosion(objects, this.x, this.y).bang();
     };
 
     Escapee.prototype.walk_on_platform = function(p) {
@@ -175,6 +167,60 @@
     };
 
     return Building;
+
+  })(PhysicalObject);
+
+  Explosion = (function() {
+
+    function Explosion(objects, x, y) {
+      this.objects = objects;
+      this.x = x;
+      this.y = y;
+    }
+
+    Explosion.prototype.bang = function() {
+      var _this = this;
+      return _(32).times(function() {
+        var c, p, v;
+        v = {
+          x: rr(-8, 32),
+          y: rr(-32, 32)
+        };
+        c = Color.string(rr(196, 255), 0, 0);
+        p = new Particle(_this.x, _this.y, 8, 8, v, c);
+        return _this.objects.push(p);
+      });
+    };
+
+    return Explosion;
+
+  })();
+
+  Particle = (function(_super) {
+
+    __extends(Particle, _super);
+
+    Particle.prototype.gravity = true;
+
+    function Particle(x, y, width, height, velocity, color) {
+      this.x = x;
+      this.y = y;
+      this.width = width;
+      this.height = height;
+      this.velocity = velocity;
+      this.color = color;
+      this.expiry = Date.now() + 500;
+    }
+
+    Particle.prototype.render = function(view) {
+      return view.fillRect(this.x, this.y, this.width, this.height, this.color);
+    };
+
+    Particle.prototype.should_gc = function(view) {
+      return Date.now() >= this.expiry;
+    };
+
+    return Particle;
 
   })(PhysicalObject);
 
@@ -415,7 +461,7 @@
     platform = _(objects).detect(function(other) {
       return other.platform && other.x_intersecting(o);
     });
-    if (platform && platform.intersecting(o)) return o.splat();
+    if (platform && platform.intersecting(o)) return o.splat(objects);
   };
 
   platform_detection = function(o, objects) {

@@ -37,22 +37,20 @@ class Escapee extends PhysicalObject
   gravity: true
   platformable: true
   constructor: (@x, @y) ->
+    @color = Color.string(64, 64, rr(192, 255))
     @velocity = { x: rw(32, 8), y: 0 }
     [ @width, @height ] = [ 16, 32 ]
   should_gc: (view) -> @x > view.right_x() || @y > view.height
   render: (view) ->
-    view.fillRect(@x, @y, @width, @height, @color())
-  color: ->
-    if @dead then Color.string(255, 0, 0)
-    else if @gravity then Color.string(0, 0, 255)
-    else Color.string(0, 255, 0)
+    view.fillRect(@x, @y, @width, @height, @color)
   jump: ->
     @gravity = true
     @velocity.y = rr(-48, -24)
-  splat: ->
+  splat: (objects) ->
     @dead = true
     @gravity = true
     @velocity = { x: 0, y: 0 }
+    new Explosion(objects, @x, @y).bang()
   walk_on_platform: (p) ->
     @gravity = false
     @velocity.y = 0
@@ -68,6 +66,22 @@ class Building extends PhysicalObject
   should_gc: (view) -> @right_x() < view.x
   render: (view) ->
     view.fillRect(@x, @y, @width, view.height - @y, @color)
+
+class Explosion
+  constructor: (@objects, @x, @y) ->
+  bang: ->
+    _(32).times =>
+      v = { x: rr(-8, 32), y: rr(-32, 32) }
+      c = Color.string(rr(196,255), 0, 0)
+      p = new Particle(@x, @y, 8, 8, v, c)
+      @objects.push p
+
+class Particle extends PhysicalObject
+  gravity: true
+  constructor: (@x, @y, @width, @height, @velocity, @color) ->
+    @expiry = Date.now() + 500 # evil global
+  render: (view) -> view.fillRect(@x, @y, @width, @height, @color)
+  should_gc: (view) -> Date.now() >= @expiry
 
 class AbstractGenerator
   constructor: (@view, @objects) ->
@@ -171,7 +185,7 @@ splat_detection = (o, objects) ->
   platform = _(objects).detect (other) ->
     other.platform && other.x_intersecting(o)
   if platform && platform.intersecting(o)
-      o.splat()
+      o.splat(objects)
 
 platform_detection = (o, objects) ->
   return if o.dead
