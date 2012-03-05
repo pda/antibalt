@@ -288,7 +288,11 @@
     };
 
     GarbageCollector.prototype.keep_collecting = function() {
-      this.collect();
+      try {
+        this.collect();
+      } catch (e) {
+        console.log("GC caught %o", e);
+      }
       return _.delay(this.keep_collecting, 100);
     };
 
@@ -306,7 +310,7 @@
         if (this.objects[i].should_gc) {
           _results.push(this.objects.splice(i, 1));
         } else {
-          _results.push(console.log("BAD GC: %o", this.objects[i]));
+          throw "Illegal GC";
         }
       }
       return _results;
