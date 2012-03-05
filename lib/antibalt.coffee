@@ -5,7 +5,7 @@ Physics =
   GRAVITY: 9.80665 # acceleration: m/s^2
   PPM: 16 # pixels per meter
   apply_gravity: (o, sec) ->
-    o.velocity.y += Physics.GRAVITY * sec * Physics.PPM
+    o.velocity.y += Physics.GRAVITY * sec * o.weight * Physics.PPM
   apply_velocity: (o, sec) ->
     @apply_x_velocity(o, sec)
     @apply_y_velocity(o, sec)
@@ -32,6 +32,7 @@ class PhysicalObject
     @y < other.bottom_y() && @bottom_y() > other.y
   intersecting: (other) ->
     @x_intersecting(other) && @y_intersecting(other)
+  weight: 1
 
 class Escapee extends PhysicalObject
   gravity: true
@@ -49,6 +50,7 @@ class Escapee extends PhysicalObject
   splat: (objects) ->
     @dead = true
     @gravity = true
+    @weight = 0.4
     @velocity = { x: 0, y: 0 }
     new Explosion(objects, @x, @y).bang()
   walk_on_platform: (p) ->
@@ -71,15 +73,16 @@ class Explosion
   constructor: (@objects, @x, @y) ->
   bang: ->
     _(32).times =>
-      v = { x: rr(-8, 32), y: rr(-32, 32) }
+      v = { x: rr(4, 16), y: rr(-32, 16) }
       c = Color.string(rr(196,255), 0, 0)
-      p = new Particle(@x, @y, 8, 8, v, c)
+      p = new Particle(@x, @y, 8, 8, v, 0.6, c)
       @objects.push p
 
 class Particle extends PhysicalObject
+  particle: true
   gravity: true
-  constructor: (@x, @y, @width, @height, @velocity, @color) ->
-    @expiry = Date.now() + 500 # evil global
+  constructor: (@x, @y, @width, @height, @velocity, @weight, @color) ->
+    @expiry = Date.now() + 1000 # evil global
   render: (view) -> view.fillRect(@x, @y, @width, @height, @color)
   should_gc: (view) -> Date.now() >= @expiry
 
@@ -129,6 +132,7 @@ class DebugInfo
       "objects: #{objects.length}"
       "platforms: " + _(objects).filter((o) -> o.platform).length
       "gravitables: " + _(objects).filter((o) -> o.gravity).length
+      "particles: " + _(objects).filter((o) -> o.particle).length
     ]
 
 class Viewport

@@ -8,7 +8,7 @@
     GRAVITY: 9.80665,
     PPM: 16,
     apply_gravity: function(o, sec) {
-      return o.velocity.y += Physics.GRAVITY * sec * Physics.PPM;
+      return o.velocity.y += Physics.GRAVITY * sec * o.weight * Physics.PPM;
     },
     apply_velocity: function(o, sec) {
       this.apply_x_velocity(o, sec);
@@ -83,6 +83,8 @@
       return this.x_intersecting(other) && this.y_intersecting(other);
     };
 
+    PhysicalObject.prototype.weight = 1;
+
     return PhysicalObject;
 
   })();
@@ -123,6 +125,7 @@
     Escapee.prototype.splat = function(objects) {
       this.dead = true;
       this.gravity = true;
+      this.weight = 0.4;
       this.velocity = {
         x: 0,
         y: 0
@@ -183,11 +186,11 @@
       return _(32).times(function() {
         var c, p, v;
         v = {
-          x: rr(-8, 32),
-          y: rr(-32, 32)
+          x: rr(4, 16),
+          y: rr(-32, 16)
         };
         c = Color.string(rr(196, 255), 0, 0);
-        p = new Particle(_this.x, _this.y, 8, 8, v, c);
+        p = new Particle(_this.x, _this.y, 8, 8, v, 0.6, c);
         return _this.objects.push(p);
       });
     };
@@ -200,16 +203,19 @@
 
     __extends(Particle, _super);
 
+    Particle.prototype.particle = true;
+
     Particle.prototype.gravity = true;
 
-    function Particle(x, y, width, height, velocity, color) {
+    function Particle(x, y, width, height, velocity, weight, color) {
       this.x = x;
       this.y = y;
       this.width = width;
       this.height = height;
       this.velocity = velocity;
+      this.weight = weight;
       this.color = color;
-      this.expiry = Date.now() + 500;
+      this.expiry = Date.now() + 1000;
     }
 
     Particle.prototype.render = function(view) {
@@ -358,6 +364,8 @@
           return o.platform;
         }).length, "gravitables: " + _(objects).filter(function(o) {
           return o.gravity;
+        }).length, "particles: " + _(objects).filter(function(o) {
+          return o.particle;
         }).length
       ]);
     };
