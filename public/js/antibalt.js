@@ -11,7 +11,13 @@
       return o.velocity.y += Physics.GRAVITY * sec * Physics.PPM;
     },
     apply_velocity: function(o, sec) {
-      o.x += o.velocity.x * sec * Physics.PPM;
+      this.apply_x_velocity(o, sec);
+      return this.apply_y_velocity(o, sec);
+    },
+    apply_x_velocity: function(o, sec) {
+      return o.x += o.velocity.x * sec * Physics.PPM;
+    },
+    apply_y_velocity: function(o, sec) {
       return o.y += o.velocity.y * sec * Physics.PPM;
     }
   };
@@ -408,8 +414,9 @@
     for (i = 0, _len = objects.length; i < _len; i++) {
       o = objects[i];
       if (o.gravity) Physics.apply_gravity(o, seconds_elapsed);
-      if (o.velocity) Physics.apply_velocity(o, seconds_elapsed);
+      if (o.velocity) Physics.apply_y_velocity(o, seconds_elapsed);
       if (o.platformable) apply_platformability(o, objects);
+      if (o.velocity) Physics.apply_x_velocity(o, seconds_elapsed);
       if (o.render) o.render(view);
     }
     webkitRequestAnimationFrame(animation_loop);

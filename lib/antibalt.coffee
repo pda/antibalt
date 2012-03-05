@@ -7,7 +7,11 @@ Physics =
   apply_gravity: (o, sec) ->
     o.velocity.y += Physics.GRAVITY * sec * Physics.PPM
   apply_velocity: (o, sec) ->
+    @apply_x_velocity(o, sec)
+    @apply_y_velocity(o, sec)
+  apply_x_velocity: (o, sec) ->
     o.x += o.velocity.x * sec * Physics.PPM
+  apply_y_velocity: (o, sec) ->
     o.y += o.velocity.y * sec * Physics.PPM
 
 class Color
@@ -169,8 +173,9 @@ animation_loop = ->
   Physics.apply_velocity(view, seconds_elapsed)
   for o, i in objects
     Physics.apply_gravity(o, seconds_elapsed) if o.gravity
-    Physics.apply_velocity(o, seconds_elapsed) if o.velocity
+    Physics.apply_y_velocity(o, seconds_elapsed) if o.velocity
     apply_platformability o, objects if o.platformable
+    Physics.apply_x_velocity(o, seconds_elapsed) if o.velocity
     o.render(view) if o.render
   webkitRequestAnimationFrame(animation_loop)
   time_previous = time_now
