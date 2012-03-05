@@ -1,5 +1,5 @@
 (function() {
-  var AbstractGenerator, Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, GarbageCollector, PhysicalObject, Physics, Viewport, animation_loop, apply_platformability, objects, rr, rw, time_previous, view,
+  var AbstractGenerator, Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, GarbageCollector, PhysicalObject, Physics, Viewport, animation_loop, platform_detection, rr, rw, splat_detection, time_previous, view,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -71,6 +71,18 @@
       return this.y = y - this.height;
     };
 
+    PhysicalObject.prototype.x_intersecting = function(other) {
+      return this.x < other.right_x() && this.right_x() > other.x;
+    };
+
+    PhysicalObject.prototype.y_intersecting = function(other) {
+      return this.y < other.bottom_y() && this.bottom_y() > other.y;
+    };
+
+    PhysicalObject.prototype.intersecting = function(other) {
+      return this.x_intersecting(other) && this.y_intersecting(other);
+    };
+
     return PhysicalObject;
 
   })();
@@ -87,7 +99,6 @@
       var _ref;
       this.x = x;
       this.y = y;
-      this.color = Color.string(64, 64, rr(192, 255));
       this.velocity = {
         x: rw(32, 8),
         y: 0
@@ -96,15 +107,45 @@
     }
 
     Escapee.prototype.should_gc = function(view) {
-      return this.x > view.right_x();
+      return this.x > view.right_x() || this.y > view.height;
     };
 
     Escapee.prototype.render = function(view) {
-      return view.fillRect(this.x, this.y, this.width, this.height, this.color);
+      return view.fillRect(this.x, this.y, this.width, this.height, this.color());
+    };
+
+    Escapee.prototype.color = function() {
+      if (this.dead) {
+        return Color.string(255, 0, 0);
+      } else if (this.gravity) {
+        return Color.string(0, 0, 255);
+      } else {
+        return Color.string(0, 255, 0);
+      }
     };
 
     Escapee.prototype.jump = function() {
+      this.gravity = true;
       return this.velocity.y = rr(-48, -24);
+    };
+
+    Escapee.prototype.splat = function() {
+      this.dead = true;
+      this.gravity = true;
+      return this.velocity = {
+        x: 0,
+        y: 0
+      };
+    };
+
+    Escapee.prototype.walk_on_platform = function(p) {
+      this.gravity = false;
+      this.velocity.y = 0;
+      return this.set_bottom_y(p.y);
+    };
+
+    Escapee.prototype.fall = function() {
+      return this.gravity = true;
     };
 
     return Escapee;
@@ -117,11 +158,12 @@
 
     Building.prototype.platform = true;
 
-    function Building(x, y, width) {
+    function Building(x, y, width, view_height) {
       this.x = x;
       this.y = y;
       this.width = width;
       this.color = Color.gray(rr(64, 128));
+      this.height = view_height - this.y;
     }
 
     Building.prototype.should_gc = function(view) {
@@ -191,7 +233,7 @@
     };
 
     BuildingGenerator.prototype.generate_first = function() {
-      return this.objects.unshift(this.latest = new Building(0, view.height / 2, view.width / 2));
+      return this.objects.unshift(this.latest = new Building(0, view.height / 2, view.width / 2, this.view.height));
     };
 
     BuildingGenerator.prototype.generate = function() {
@@ -204,7 +246,7 @@
     };
 
     BuildingGenerator.prototype.build = function() {
-      return this.objects.unshift(this.latest = new Building(this.x(), this.y(), this.width()));
+      return this.objects.unshift(this.latest = new Building(this.x(), this.y(), this.width(), this.view.height));
     };
 
     BuildingGenerator.prototype.gap = function() {
@@ -367,33 +409,34 @@
     return rr(mid - radius, mid + radius);
   };
 
-  apply_platformability = function(o, objects) {
-    var distance_to_edge, other, _i, _len, _results;
-    _results = [];
-    for (_i = 0, _len = objects.length; _i < _len; _i++) {
-      other = objects[_i];
-      if (!other.platform) continue;
-      if (o.bottom_y() >= other.y) {
-        if (o.x >= other.x && o.x <= other.right_x()) {
-          o.velocity.y = 0;
-          o.set_bottom_y(other.y);
-        }
-        distance_to_edge = other.right_x() - o.x;
-        if (distance_to_edge >= 0 && distance_to_edge < 100) {
-          _results.push(o.jump());
-        } else {
-          _results.push(void 0);
-        }
-      } else {
-        _results.push(void 0);
-      }
-    }
-    return _results;
+  splat_detection = function(o, objects) {
+    var platform;
+    if (o.dead) return;
+    platform = _(objects).detect(function(other) {
+      return other.platform && other.x_intersecting(o);
+    });
+    if (platform && platform.intersecting(o)) return o.splat();
   };
 
-  view = new Viewport(1600, 600);
+  platform_detection = function(o, objects) {
+    var distance_to_edge, platform;
+    if (o.dead) return;
+    platform = _(objects).detect(function(other) {
+      return other.platform && other.x_intersecting(o);
+    });
+    if (platform && o.gravity) {
+      if (o.bottom_y() >= platform.y) o.walk_on_platform(platform);
+    }
+    if (platform && !o.gravity) {
+      distance_to_edge = platform.right_x() - o.x;
+      if (distance_to_edge >= 0 && distance_to_edge < 100) o.jump();
+    }
+    if (!platform && !o.gravity) return o.fall();
+  };
 
-  objects = [];
+  view = new Viewport(1200, 600);
+
+  window.objects = [];
 
   objects.push(new DebugInfo(view, objects));
 
@@ -409,18 +452,19 @@
     var i, o, seconds_elapsed, time_now, _len;
     time_now = Date.now();
     seconds_elapsed = (time_now - time_previous) / 1000;
+    time_previous = time_now;
     view.clear();
     Physics.apply_velocity(view, seconds_elapsed);
     for (i = 0, _len = objects.length; i < _len; i++) {
       o = objects[i];
+      if (o.velocity) Physics.apply_x_velocity(o, seconds_elapsed);
+      if (o.platformable) splat_detection(o, objects);
       if (o.gravity) Physics.apply_gravity(o, seconds_elapsed);
       if (o.velocity) Physics.apply_y_velocity(o, seconds_elapsed);
-      if (o.platformable) apply_platformability(o, objects);
-      if (o.velocity) Physics.apply_x_velocity(o, seconds_elapsed);
+      if (o.platformable) platform_detection(o, objects);
       if (o.render) o.render(view);
     }
-    webkitRequestAnimationFrame(animation_loop);
-    return time_previous = time_now;
+    return webkitRequestAnimationFrame(animation_loop);
   };
 
   animation_loop();

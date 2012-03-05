@@ -26,23 +26,45 @@ class PhysicalObject
   right_x: -> @x + @width
   bottom_y: -> @y + @height
   set_bottom_y: (y) -> @y = y - @height
+  x_intersecting: (other) ->
+    @x < other.right_x() && @right_x() > other.x
+  y_intersecting: (other) ->
+    @y < other.bottom_y() && @bottom_y() > other.y
+  intersecting: (other) ->
+    @x_intersecting(other) && @y_intersecting(other)
 
 class Escapee extends PhysicalObject
   gravity: true
   platformable: true
   constructor: (@x, @y) ->
-    @color = Color.string(64, 64, rr(192, 255))
     @velocity = { x: rw(32, 8), y: 0 }
     [ @width, @height ] = [ 16, 32 ]
-  should_gc: (view) -> @x > view.right_x()
+  should_gc: (view) -> @x > view.right_x() || @y > view.height
   render: (view) ->
-    view.fillRect(@x, @y, @width, @height, @color)
-  jump: -> @velocity.y = rr(-48, -24)
+    view.fillRect(@x, @y, @width, @height, @color())
+  color: ->
+    if @dead then Color.string(255, 0, 0)
+    else if @gravity then Color.string(0, 0, 255)
+    else Color.string(0, 255, 0)
+  jump: ->
+    @gravity = true
+    @velocity.y = rr(-48, -24)
+  splat: ->
+    @dead = true
+    @gravity = true
+    @velocity = { x: 0, y: 0 }
+  walk_on_platform: (p) ->
+    @gravity = false
+    @velocity.y = 0
+    @set_bottom_y(p.y)
+  fall: ->
+    @gravity = true
 
 class Building extends PhysicalObject
   platform: true
-  constructor: (@x, @y, @width) ->
+  constructor: (@x, @y, @width, view_height) ->
     @color = Color.gray rr 64, 128
+    @height = view_height - @y
   should_gc: (view) -> @right_x() < view.x
   render: (view) ->
     view.fillRect(@x, @y, @width, view.height - @y, @color)
@@ -63,9 +85,9 @@ class EscapeeGenerator extends AbstractGenerator
 class BuildingGenerator extends AbstractGenerator
   delay: -> 500
   generate_first: ->
-    @objects.unshift @latest = new Building(0, view.height / 2, view.width / 2)
+    @objects.unshift @latest = new Building(0, view.height / 2, view.width / 2, @view.height)
   generate: -> @build() while @latest.right_x() < @view.right_x() + 100
-  build: -> @objects.unshift @latest = new Building(@x(), @y(), @width())
+  build: -> @objects.unshift @latest = new Building(@x(), @y(), @width(), @view.height)
   gap: -> rr 10, 100
   width: -> rr 100, @view.width / 2
   x: -> @latest.right_x() + @gap()
@@ -144,19 +166,29 @@ rw = (mid, radius) -> rr(mid - radius, mid + radius)
 ##
 # Random stuff to refactor
 
-apply_platformability = (o, objects) ->
-  for other in objects
-    continue unless other.platform
-    if o.bottom_y() >= other.y
-      if o.x >= other.x && o.x <= other.right_x()
-        o.velocity.y = 0
-        o.set_bottom_y other.y
-      distance_to_edge = other.right_x() - o.x
-      if distance_to_edge >= 0 && distance_to_edge < 100
-        o.jump()
+splat_detection = (o, objects) ->
+  return if o.dead
+  platform = _(objects).detect (other) ->
+    other.platform && other.x_intersecting(o)
+  if platform && platform.intersecting(o)
+      o.splat()
 
-view = new Viewport(1600, 600)
-objects = []
+platform_detection = (o, objects) ->
+  return if o.dead
+  platform = _(objects).detect (other) ->
+    other.platform && other.x_intersecting(o)
+  if platform && o.gravity
+    if o.bottom_y() >= platform.y
+      o.walk_on_platform(platform)
+  if platform && !o.gravity
+    distance_to_edge = platform.right_x() - o.x
+    if distance_to_edge >= 0 && distance_to_edge < 100
+      o.jump()
+  if !platform && !o.gravity
+    o.fall()
+
+view = new Viewport(1200, 600)
+window.objects = []
 
 objects.push new DebugInfo(view, objects)
 
@@ -169,16 +201,17 @@ time_previous = Date.now() # milliseconds
 animation_loop = ->
   time_now = Date.now()
   seconds_elapsed = (time_now - time_previous) / 1000
+  time_previous = time_now
   view.clear()
   Physics.apply_velocity(view, seconds_elapsed)
   for o, i in objects
+    Physics.apply_x_velocity(o, seconds_elapsed) if o.velocity
+    splat_detection(o, objects) if o.platformable
     Physics.apply_gravity(o, seconds_elapsed) if o.gravity
     Physics.apply_y_velocity(o, seconds_elapsed) if o.velocity
-    apply_platformability o, objects if o.platformable
-    Physics.apply_x_velocity(o, seconds_elapsed) if o.velocity
+    platform_detection(o, objects) if o.platformable
     o.render(view) if o.render
   webkitRequestAnimationFrame(animation_loop)
-  time_previous = time_now
 
 ##
 # The game!
