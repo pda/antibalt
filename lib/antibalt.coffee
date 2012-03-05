@@ -43,22 +43,24 @@ class Building extends PhysicalObject
   render: (view) ->
     view.fillRect(@x, @y, @width, view.height - @y, @color)
 
-class EscapeeGenerator
-  constructor: (@view, @objects) ->
-  start: -> @keep_escaping()
-  keep_escaping: =>
-    objects.unshift new Escapee(@view.x, rr(0, @view.height / 2))
-    _.delay @keep_escaping, rw(500, 300)
-
-class BuildingGenerator
+class AbstractGenerator
   constructor: (@view, @objects) ->
   start: ->
+    @generate_first() if @generate_first
+    @keep_generating()
+  keep_generating: =>
+    @generate()
+    _.delay @keep_generating, @delay()
+
+class EscapeeGenerator extends AbstractGenerator
+  delay: -> rw(500, 300)
+  generate: -> objects.unshift new Escapee(@view.x, rr(0, @view.height / 2))
+
+class BuildingGenerator extends AbstractGenerator
+  delay: -> 500
+  generate_first: ->
     @objects.unshift @latest = new Building(0, view.height / 2, view.width / 2)
-    @keep_building()
-  keep_building: =>
-    @fill_screen()
-    _.delay @keep_building, 500
-  fill_screen: -> @build() while @latest.right_x() < @view.right_x() + 100
+  generate: -> @build() while @latest.right_x() < @view.right_x() + 100
   build: -> @objects.unshift @latest = new Building(@x(), @y(), @width())
   gap: -> rr 10, 100
   width: -> rr 100, @view.width / 2

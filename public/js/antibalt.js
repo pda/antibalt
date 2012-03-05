@@ -1,5 +1,5 @@
 (function() {
-  var Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, GarbageCollector, PhysicalObject, Physics, Viewport, animation_loop, apply_platformability, objects, rr, rw, time_previous, view,
+  var AbstractGenerator, Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, GarbageCollector, PhysicalObject, Physics, Viewport, animation_loop, apply_platformability, objects, rr, rw, time_previous, view,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -130,46 +130,65 @@
 
   })(PhysicalObject);
 
-  EscapeeGenerator = (function() {
+  AbstractGenerator = (function() {
 
-    function EscapeeGenerator(view, objects) {
+    function AbstractGenerator(view, objects) {
       this.view = view;
       this.objects = objects;
-      this.keep_escaping = __bind(this.keep_escaping, this);
+      this.keep_generating = __bind(this.keep_generating, this);
     }
 
-    EscapeeGenerator.prototype.start = function() {
-      return this.keep_escaping();
+    AbstractGenerator.prototype.start = function() {
+      if (this.generate_first) this.generate_first();
+      return this.keep_generating();
     };
 
-    EscapeeGenerator.prototype.keep_escaping = function() {
-      objects.unshift(new Escapee(this.view.x, rr(0, this.view.height / 2)));
-      return _.delay(this.keep_escaping, rw(500, 300));
+    AbstractGenerator.prototype.keep_generating = function() {
+      this.generate();
+      return _.delay(this.keep_generating, this.delay());
+    };
+
+    return AbstractGenerator;
+
+  })();
+
+  EscapeeGenerator = (function(_super) {
+
+    __extends(EscapeeGenerator, _super);
+
+    function EscapeeGenerator() {
+      EscapeeGenerator.__super__.constructor.apply(this, arguments);
+    }
+
+    EscapeeGenerator.prototype.delay = function() {
+      return rw(500, 300);
+    };
+
+    EscapeeGenerator.prototype.generate = function() {
+      return objects.unshift(new Escapee(this.view.x, rr(0, this.view.height / 2)));
     };
 
     return EscapeeGenerator;
 
-  })();
+  })(AbstractGenerator);
 
-  BuildingGenerator = (function() {
+  BuildingGenerator = (function(_super) {
 
-    function BuildingGenerator(view, objects) {
-      this.view = view;
-      this.objects = objects;
-      this.keep_building = __bind(this.keep_building, this);
+    __extends(BuildingGenerator, _super);
+
+    function BuildingGenerator() {
+      BuildingGenerator.__super__.constructor.apply(this, arguments);
     }
 
-    BuildingGenerator.prototype.start = function() {
-      this.objects.unshift(this.latest = new Building(0, view.height / 2, view.width / 2));
-      return this.keep_building();
+    BuildingGenerator.prototype.delay = function() {
+      return 500;
     };
 
-    BuildingGenerator.prototype.keep_building = function() {
-      this.fill_screen();
-      return _.delay(this.keep_building, 500);
+    BuildingGenerator.prototype.generate_first = function() {
+      return this.objects.unshift(this.latest = new Building(0, view.height / 2, view.width / 2));
     };
 
-    BuildingGenerator.prototype.fill_screen = function() {
+    BuildingGenerator.prototype.generate = function() {
       var _results;
       _results = [];
       while (this.latest.right_x() < this.view.right_x() + 100) {
@@ -204,7 +223,7 @@
 
     return BuildingGenerator;
 
-  })();
+  })(AbstractGenerator);
 
   DebugInfo = (function() {
 
