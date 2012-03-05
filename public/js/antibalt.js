@@ -1,5 +1,7 @@
 (function() {
-  var Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, GarbageCollector, Physics, Viewport, animation_loop, apply_platformability, objects, rr, rw, time_previous, view,
+  var Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, GarbageCollector, PhysicalObject, Physics, Viewport, animation_loop, apply_platformability, objects, rr, rw, time_previous, view,
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   Physics = {
@@ -47,7 +49,29 @@
 
   })();
 
-  Escapee = (function() {
+  PhysicalObject = (function() {
+
+    function PhysicalObject() {}
+
+    PhysicalObject.prototype.right_x = function() {
+      return this.x + this.width;
+    };
+
+    PhysicalObject.prototype.bottom_y = function() {
+      return this.y + this.height;
+    };
+
+    PhysicalObject.prototype.set_bottom_y = function(y) {
+      return this.y = y - this.height;
+    };
+
+    return PhysicalObject;
+
+  })();
+
+  Escapee = (function(_super) {
+
+    __extends(Escapee, _super);
 
     Escapee.prototype.gravity = true;
 
@@ -65,14 +89,6 @@
       _ref = [16, 32], this.width = _ref[0], this.height = _ref[1];
     }
 
-    Escapee.prototype.bottom_y = function() {
-      return this.y + this.height;
-    };
-
-    Escapee.prototype.set_bottom_y = function(y) {
-      return this.y = y - this.height;
-    };
-
     Escapee.prototype.should_gc = function(view) {
       return this.x > view.right_x();
     };
@@ -87,9 +103,11 @@
 
     return Escapee;
 
-  })();
+  })(PhysicalObject);
 
-  Building = (function() {
+  Building = (function(_super) {
+
+    __extends(Building, _super);
 
     Building.prototype.platform = true;
 
@@ -99,10 +117,6 @@
       this.width = width;
       this.color = Color.gray(rr(64, 128));
     }
-
-    Building.prototype.right_x = function() {
-      return this.x + this.width;
-    };
 
     Building.prototype.should_gc = function(view) {
       return this.right_x() < view.x;
@@ -114,7 +128,7 @@
 
     return Building;
 
-  })();
+  })(PhysicalObject);
 
   EscapeeGenerator = (function() {
 

@@ -18,25 +18,27 @@ class Color
   @white: (a) -> Color.string(255, 255, 255, a)
   @gray: (v, a) -> Color.string(v, v, v, a)
 
-class Escapee
+class PhysicalObject
+  right_x: -> @x + @width
+  bottom_y: -> @y + @height
+  set_bottom_y: (y) -> @y = y - @height
+
+class Escapee extends PhysicalObject
   gravity: true
   platformable: true
   constructor: (@x, @y) ->
     @color = Color.string(64, 64, rr(192, 255))
     @velocity = { x: rw(32, 8), y: 0 }
     [ @width, @height ] = [ 16, 32 ]
-  bottom_y: -> @y + @height
-  set_bottom_y: (y) -> @y = y - @height
   should_gc: (view) -> @x > view.right_x()
   render: (view) ->
     view.fillRect(@x, @y, @width, @height, @color)
   jump: -> @velocity.y = rr(-48, -24)
 
-class Building
+class Building extends PhysicalObject
   platform: true
   constructor: (@x, @y, @width) ->
     @color = Color.gray rr 64, 128
-  right_x: -> @x + @width
   should_gc: (view) -> @right_x() < view.x
   render: (view) ->
     view.fillRect(@x, @y, @width, view.height - @y, @color)
