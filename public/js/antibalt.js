@@ -1,5 +1,5 @@
 (function() {
-  var AbstractGenerator, Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, Explosion, GarbageCollector, Particle, PhysicalObject, Physics, Viewport, animation_loop, platform_detection, platform_x_intersecting, rr, rw, splat_detection, time_previous, view,
+  var AbstractGenerator, Building, BuildingGenerator, Bullet, Color, DebugInfo, Escapee, EscapeeGenerator, Explosion, GarbageCollector, Particle, PhysicalObject, Physics, Viewport, animation_loop, click_listener, platform_detection, platform_x_intersecting, rr, rw, shootables_hit, splat_detection, time_previous, view,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -89,6 +89,44 @@
 
   })();
 
+  Bullet = (function(_super) {
+
+    __extends(Bullet, _super);
+
+    function Bullet(x, y) {
+      this.x = x - this.width / 2;
+      this.y = y - this.height / 2;
+      this.created_at = Date.now();
+    }
+
+    Bullet.prototype.age = function() {
+      return Date.now() - this.created_at;
+    };
+
+    Bullet.prototype.color = function() {
+      var c, opacity;
+      opacity = Math.max(0, Math.min(0.4, 1 - this.age() / 400));
+      c = Color.string(255, 255, 0, opacity);
+      console.log(c);
+      return c;
+    };
+
+    Bullet.prototype.width = 64;
+
+    Bullet.prototype.height = 64;
+
+    Bullet.prototype.render = function(view) {
+      return view.fillRect(this.x, this.y, this.width, this.height, this.color());
+    };
+
+    Bullet.prototype.should_gc = function() {
+      return this.age() > 1000;
+    };
+
+    return Bullet;
+
+  })(PhysicalObject);
+
   Escapee = (function(_super) {
 
     __extends(Escapee, _super);
@@ -96,6 +134,8 @@
     Escapee.prototype.gravity = true;
 
     Escapee.prototype.platformable = true;
+
+    Escapee.prototype.shootable = true;
 
     function Escapee(x, y) {
       var _ref;
@@ -401,6 +441,13 @@
       return this.x + this.width;
     };
 
+    Viewport.prototype.view_to_world = function(x, y) {
+      return {
+        x: x + this.x,
+        y: y + this.y
+      };
+    };
+
     Viewport.prototype.clear = function() {
       return this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     };
@@ -513,6 +560,25 @@
     }
     return webkitRequestAnimationFrame(animation_loop);
   };
+
+  shootables_hit = function(objects, bullet) {
+    return _(objects).select(function(o) {
+      return o.shootable && (o.intersecting(bullet) || bullet.intersecting(o));
+    });
+  };
+
+  click_listener = function(event) {
+    var bullet, point, shootables;
+    point = view.view_to_world(event.offsetX, event.offsetY);
+    bullet = new Bullet(point.x, point.y);
+    objects.unshift(bullet);
+    shootables = shootables_hit(objects, bullet);
+    return _(shootables).each(function(o) {
+      return o.splat(objects);
+    });
+  };
+
+  view.canvas.addEventListener("click", click_listener);
 
   animation_loop();
 

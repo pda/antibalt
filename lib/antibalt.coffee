@@ -30,13 +30,32 @@ class PhysicalObject
     @x < other.right_x() && @right_x() > other.x
   y_intersecting: (other) ->
     @y < other.bottom_y() && @bottom_y() > other.y
+  # does not currently detect if this is entirely within other
   intersecting: (other) ->
     @x_intersecting(other) && @y_intersecting(other)
   weight: 1
 
+class Bullet extends PhysicalObject
+  constructor: (x, y) ->
+    @x = x - @width / 2
+    @y = y - @height / 2
+    @created_at = Date.now() # evil global
+  age: -> Date.now() - @created_at
+  color: ->
+    opacity = Math.max(0, Math.min(0.4, 1 - @age() / 400))
+    c = Color.string(255, 255, 0, opacity)
+    console.log c
+    c
+  width: 64
+  height: 64
+  render: (view) ->
+    view.fillRect(@x, @y, @width, @height, @color())
+  should_gc: -> @age() > 1000
+
 class Escapee extends PhysicalObject
   gravity: true
   platformable: true
+  shootable: true
   constructor: (@x, @y) ->
     @color = Color.string(64, 64, rr(192, 255))
     @velocity = { x: rw(32, 8), y: 0 }
@@ -150,6 +169,8 @@ class Viewport
     [ @x, @y ] = [ 0, 0 ]
     @velocity = { x: 16, y: 0 }
   right_x: -> @x + @width
+  view_to_world: (x, y) ->
+    { x: x + @x, y: y + @y }
   clear: ->
     @context.clearRect(0, 0, @canvas.width, @canvas.height)
   fillRect: (x, y, width, height, fillStyle) ->
@@ -228,6 +249,20 @@ animation_loop = ->
     platform_detection(o, objects) if o.platformable
     o.render(view) if o.render
   webkitRequestAnimationFrame(animation_loop)
+
+shootables_hit = (objects, bullet) ->
+  _(objects).select (o) ->
+    o.shootable && (o.intersecting(bullet) || bullet.intersecting(o))
+
+click_listener = (event) ->
+  point = view.view_to_world(event.offsetX, event.offsetY)
+  bullet = new Bullet(point.x, point.y)
+  objects.unshift bullet
+  shootables = shootables_hit(objects, bullet)
+  _(shootables).each (o) ->
+    o.splat(objects)
+
+view.canvas.addEventListener("click", click_listener)
 
 ##
 # The game!
