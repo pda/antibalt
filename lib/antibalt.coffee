@@ -97,7 +97,7 @@ class AbstractGenerator
 
 class EscapeeGenerator extends AbstractGenerator
   delay: -> rw(500, 300)
-  generate: -> objects.unshift new Escapee(@view.x, rr(0, @view.height / 2))
+  generate: -> objects.unshift new Escapee(@view.x, rr(0, @view.height / 4))
 
 class BuildingGenerator extends AbstractGenerator
   delay: -> 500
@@ -108,7 +108,11 @@ class BuildingGenerator extends AbstractGenerator
   gap: -> rr 10, 100
   width: -> rr 100, @view.width / 2
   x: -> @latest.right_x() + @gap()
-  y: -> @bounded rr(@latest.y - 64, @latest.y + 64), 100, @view.height - 100
+  y: ->
+    r = rr(@latest.y - 64, @latest.y + 64)
+    quarter = @view.height / 4 # Space for EscapeeGenerator.
+    tenth = @view.height / 10  # Minimum height.
+    @bounded(r, quarter, @view.height - tenth)
   bounded: (i, min, max) -> _.max([ _.min([ i, max ]), min])
 
 class DebugInfo

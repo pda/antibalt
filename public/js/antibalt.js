@@ -265,7 +265,7 @@
     };
 
     EscapeeGenerator.prototype.generate = function() {
-      return objects.unshift(new Escapee(this.view.x, rr(0, this.view.height / 2)));
+      return objects.unshift(new Escapee(this.view.x, rr(0, this.view.height / 4)));
     };
 
     return EscapeeGenerator;
@@ -314,7 +314,11 @@
     };
 
     BuildingGenerator.prototype.y = function() {
-      return this.bounded(rr(this.latest.y - 64, this.latest.y + 64), 100, this.view.height - 100);
+      var quarter, r, tenth;
+      r = rr(this.latest.y - 64, this.latest.y + 64);
+      quarter = this.view.height / 4;
+      tenth = this.view.height / 10;
+      return this.bounded(r, quarter, this.view.height - tenth);
     };
 
     BuildingGenerator.prototype.bounded = function(i, min, max) {
