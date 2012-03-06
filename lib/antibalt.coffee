@@ -156,21 +156,14 @@ class GarbageCollector
   constructor: (@view, @objects) ->
   start: -> @keep_collecting()
   keep_collecting: =>
-    try
-      @collect()
-    catch e
-      console.log "GC caught %o", e
+    @collect()
     _.delay @keep_collecting, 100
   collect: ->
-    # buggy; indices may change between mark and sweep!
-    indices = []
-    for o, i in @objects
-      indices.push i if o.should_gc && o.should_gc(@view)
-    for i in indices
-      if @objects[i].should_gc
-        @objects.splice(i, 1)
-      else
-        throw "Illegal GC"
+    _.chain(@objects).
+      map((o, i) => i if o.should_gc && o.should_gc(@view)).
+      filter((i) -> i?).
+      reverse().
+      each((i) => @objects.splice(i, 1))
 
 ##
 # Helper functions

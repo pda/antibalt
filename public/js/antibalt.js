@@ -423,32 +423,19 @@
     };
 
     GarbageCollector.prototype.keep_collecting = function() {
-      try {
-        this.collect();
-      } catch (e) {
-        console.log("GC caught %o", e);
-      }
+      this.collect();
       return _.delay(this.keep_collecting, 100);
     };
 
     GarbageCollector.prototype.collect = function() {
-      var i, indices, o, _i, _len, _len2, _ref, _results;
-      indices = [];
-      _ref = this.objects;
-      for (i = 0, _len = _ref.length; i < _len; i++) {
-        o = _ref[i];
-        if (o.should_gc && o.should_gc(this.view)) indices.push(i);
-      }
-      _results = [];
-      for (_i = 0, _len2 = indices.length; _i < _len2; _i++) {
-        i = indices[_i];
-        if (this.objects[i].should_gc) {
-          _results.push(this.objects.splice(i, 1));
-        } else {
-          throw "Illegal GC";
-        }
-      }
-      return _results;
+      var _this = this;
+      return _.chain(this.objects).map(function(o, i) {
+        if (o.should_gc && o.should_gc(_this.view)) return i;
+      }).filter(function(i) {
+        return i != null;
+      }).reverse().each(function(i) {
+        return _this.objects.splice(i, 1);
+      });
     };
 
     return GarbageCollector;
