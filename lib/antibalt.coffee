@@ -184,17 +184,18 @@ rw = (mid, radius) -> rr(mid - radius, mid + radius)
 ##
 # Random stuff to refactor
 
+platform_x_intersecting = (o, objects) ->
+  _(objects).detect (other) -> other.platform && other.x_intersecting(o)
+
 splat_detection = (o, objects) ->
   return if o.dead
-  platform = _(objects).detect (other) ->
-    other.platform && other.x_intersecting(o)
+  platform = platform_x_intersecting(o, objects)
   if platform && platform.intersecting(o)
       o.splat(objects)
 
 platform_detection = (o, objects) ->
   return if o.dead
-  platform = _(objects).detect (other) ->
-    other.platform && other.x_intersecting(o)
+  platform = platform_x_intersecting(o, objects)
   if platform && o.gravity
     if o.bottom_y() >= platform.y
       o.walk_on_platform(platform)

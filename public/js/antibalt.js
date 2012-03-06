@@ -1,5 +1,5 @@
 (function() {
-  var AbstractGenerator, Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, Explosion, GarbageCollector, Particle, PhysicalObject, Physics, Viewport, animation_loop, platform_detection, rr, rw, splat_detection, time_previous, view,
+  var AbstractGenerator, Building, BuildingGenerator, Color, DebugInfo, Escapee, EscapeeGenerator, Explosion, GarbageCollector, Particle, PhysicalObject, Physics, Viewport, animation_loop, platform_detection, platform_x_intersecting, rr, rw, splat_detection, time_previous, view,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -463,21 +463,23 @@
     return rr(mid - radius, mid + radius);
   };
 
+  platform_x_intersecting = function(o, objects) {
+    return _(objects).detect(function(other) {
+      return other.platform && other.x_intersecting(o);
+    });
+  };
+
   splat_detection = function(o, objects) {
     var platform;
     if (o.dead) return;
-    platform = _(objects).detect(function(other) {
-      return other.platform && other.x_intersecting(o);
-    });
+    platform = platform_x_intersecting(o, objects);
     if (platform && platform.intersecting(o)) return o.splat(objects);
   };
 
   platform_detection = function(o, objects) {
     var distance_to_edge, platform;
     if (o.dead) return;
-    platform = _(objects).detect(function(other) {
-      return other.platform && other.x_intersecting(o);
-    });
+    platform = platform_x_intersecting(o, objects);
     if (platform && o.gravity) {
       if (o.bottom_y() >= platform.y) o.walk_on_platform(platform);
     }
