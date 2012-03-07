@@ -207,7 +207,7 @@
     };
 
     Building.prototype.render = function(view) {
-      return view.fillRect(this.x, this.y, this.width, view.height - this.y, this.color);
+      return view.fillRect(this.x, this.y, this.width, this.height, this.color);
     };
 
     return Building;

@@ -88,7 +88,7 @@ class Building extends PhysicalObject
     @height = view_height - @y
   should_gc: (view) -> @right_x() < view.x
   render: (view) ->
-    view.fillRect(@x, @y, @width, view.height - @y, @color)
+    view.fillRect(@x, @y, @width, @height, @color)
 
 class Explosion
   constructor: (@objects, @x, @y) ->
