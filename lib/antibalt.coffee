@@ -118,7 +118,9 @@ class Particle extends PhysicalObject
     @expiry = Date.now() + 1000 # evil global
   width: 8
   height: 8
-  render: (view) -> view.fillRect(@x, @y, @width, @height, @color)
+  render: (view) ->
+    c = if typeof @color == "function" then @color() else @color
+    view.fillRect(@x, @y, @width, @height, c)
   should_gc: (view) -> Date.now() >= @expiry
 
 class AbstractGenerator

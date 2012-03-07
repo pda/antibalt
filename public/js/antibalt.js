@@ -290,7 +290,9 @@
     Particle.prototype.height = 8;
 
     Particle.prototype.render = function(view) {
-      return view.fillRect(this.x, this.y, this.width, this.height, this.color);
+      var c;
+      c = typeof this.color === "function" ? this.color() : this.color;
+      return view.fillRect(this.x, this.y, this.width, this.height, c);
     };
 
     Particle.prototype.should_gc = function(view) {
