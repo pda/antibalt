@@ -253,12 +253,13 @@
     Explosion.prototype.bullet = function() {
       var _this = this;
       return _(32).times(function() {
-        var c, p, v;
+        var c, gray, p, v;
         v = {
           x: rr(0, 4),
           y: rr(-16, -8)
         };
-        c = Color.gray(rw(128, 64), 0.5);
+        gray = rw(128, 64);
+        c = Color.fader(gray, gray, gray, 1, 0.5);
         p = new Particle(_this.x + rw(0, 16), _this.y + rw(0, 16), v, 0.05, c);
         return _this.objects.push(p);
       });
