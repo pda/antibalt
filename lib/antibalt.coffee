@@ -18,9 +18,15 @@ class Color
   constructor: (@r, @g, @b, @a = 1.0) ->
   toString: -> "rgba(#{@r},#{@g},#{@b},#{@a})"
   @string: (r, g, b, a) -> new Color(r, g, b, a).toString()
-  @black: (a) -> Color.string(0, 0, 0, a)
-  @white: (a) -> Color.string(255, 255, 255, a)
-  @gray: (v, a) -> Color.string(v, v, v, a)
+  @black: (a) -> @string(0, 0, 0, a)
+  @white: (a) -> @string(255, 255, 255, a)
+  @gray: (v, a) -> @string(v, v, v, a)
+  @fader: (r, g, b, seconds, initial = 1) ->
+    start = Date.now()
+    ->
+      elapsed = (Date.now() - start) / 1000
+      alpha = Math.max(0, initial - elapsed / seconds * initial)
+      Color.string(r, g, b, alpha)
 
 class PhysicalObject
   right_x: -> @x + @width

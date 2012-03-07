@@ -40,15 +40,27 @@
     };
 
     Color.black = function(a) {
-      return Color.string(0, 0, 0, a);
+      return this.string(0, 0, 0, a);
     };
 
     Color.white = function(a) {
-      return Color.string(255, 255, 255, a);
+      return this.string(255, 255, 255, a);
     };
 
     Color.gray = function(v, a) {
-      return Color.string(v, v, v, a);
+      return this.string(v, v, v, a);
+    };
+
+    Color.fader = function(r, g, b, seconds, initial) {
+      var start;
+      if (initial == null) initial = 1;
+      start = Date.now();
+      return function() {
+        var alpha, elapsed;
+        elapsed = (Date.now() - start) / 1000;
+        alpha = Math.max(0, initial - elapsed / seconds * initial);
+        return Color.string(r, g, b, alpha);
+      };
     };
 
     return Color;
