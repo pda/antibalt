@@ -41,13 +41,31 @@ class PhysicalObject
     @x_intersecting(other) && @y_intersecting(other)
   weight: 1
 
+class Crosshair extends PhysicalObject
+  constructor: (view) ->
+    @aim( x: view.width / 2, y: view.height / 2 )
+    bullet = new Bullet(0,0)
+    [ @width, @height ] = [ bullet.width, bullet.height ]
+    @color = Color.string(255, 255, 0, 0.1)
+    @color_dot = Color.black()
+  aim: (point) ->
+    @center = point
+    @x = point.x - @width / 2
+    @y = point.y - @height / 2
+  render: (view) ->
+    view.context.fillStyle = @color
+    view.context.fillRect(@x, @y, @width, @height)
+    view.context.fillStyle = @color_dot
+    view.context.fillRect(@center.x, @center.y, 4, 4)
+
 class Bullet extends PhysicalObject
   constructor: (x, y) ->
+    @width = @size
+    @height = @size
     @x = x - @width / 2
     @y = y - @height / 2
     @created_at = Date.now() # evil global
-  width: 64
-  height: 64
+  size: 64
 
 class Escapee extends PhysicalObject
   gravity: true
@@ -59,7 +77,36 @@ class Escapee extends PhysicalObject
     [ @width, @height ] = [ 16, 32 ]
   should_gc: (view) -> @x > view.right_x() || @y > view.height
   render: (view) ->
-    view.fillRect(@x, @y, @width, @height, @color)
+    time = Date.now()
+    @drawRunning(view, time)
+  drawRunning: (view, time) ->
+    phase = Math.sin(time * 0.03)
+    base = view.world_to_view(@x, @y)
+    view.context.save()
+    view.context.translate(base.x, base.y)
+
+    # head
+    view.context.save()
+    view.context.fillStyle = @color
+    view.context.rotate(phase * 0.2)
+    view.context.fillRect(0, 0, 16, 16)
+    view.context.fillStyle = Color.string(32, 32, 128)
+    view.context.fillRect(12, 4, 4, 4)
+    view.context.fillRect(8, 10, 8, 4)
+    view.context.restore()
+
+    # legs
+    view.context.translate(4, 16)
+
+    view.context.rotate(phase * 0.5 + 0.1)
+    view.context.fillStyle = @color
+    view.context.fillRect(0, 0, 8, 16)
+
+    view.context.rotate(phase * -1)
+    view.context.fillStyle = @color
+    view.context.fillRect(0, 0, 8, 16)
+
+    view.context.restore()
   jump: ->
     @gravity = true
     @velocity.y = rr(-48, -24)
@@ -206,18 +253,20 @@ class Viewport
     @canvas.width = @width
     @canvas.height = @height
     @canvas.style.backgroundColor = "black"
+    @canvas.style.cursor = "none"
     @context = @canvas.getContext("2d")
     [ @width, @height ] = [ @canvas.width, @canvas.height ]
     [ @x, @y ] = [ 0, 0 ]
     @velocity = { x: 16, y: 0 }
   right_x: -> @x + @width
-  view_to_world: (x, y) ->
-    { x: x + @x, y: y + @y }
+  view_to_world: (x, y) -> { x: x + @x, y: y + @y }
+  world_to_view: (x, y) -> { x: x - @x, y: y - @y }
   clear: ->
     @context.clearRect(0, 0, @canvas.width, @canvas.height)
   fillRect: (x, y, width, height, fillStyle) ->
+    base = @world_to_view(x, y)
     @context.fillStyle = fillStyle
-    @context.fillRect x - @x, y - @y, width, height
+    @context.fillRect base.x, base.y, width, height
 
 class GarbageCollector
   constructor: (@view, @objects) ->
@@ -271,6 +320,8 @@ window.objects = []
 
 objects.push new DebugInfo(view, objects)
 
+objects.push crosshair = new Crosshair(view)
+
 new EscapeeGenerator(view, objects).start()
 new BuildingGenerator(view, objects).start()
 new GarbageCollector(view, objects).start()
@@ -304,7 +355,13 @@ click_listener = (event) ->
   _(shootables).each (o) ->
     o.bang(objects)
 
+mouse_move_listener = (event) ->
+  #point = view.view_to_world(event.offsetX, event.offsetY)
+  point = { x: event.offsetX, y: event.offsetY }
+  crosshair.aim(point)
+
 view.canvas.addEventListener("click", click_listener)
+view.canvas.addEventListener("mousemove", mouse_move_listener)
 
 ##
 # The game!

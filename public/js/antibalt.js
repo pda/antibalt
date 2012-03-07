@@ -1,5 +1,5 @@
 (function() {
-  var AbstractGenerator, Building, BuildingGenerator, Bullet, Color, DebugInfo, Escapee, EscapeeGenerator, Explosion, GarbageCollector, Particle, PhysicalObject, Physics, Viewport, animation_loop, click_listener, platform_detection, platform_x_intersecting, rr, rw, shootables_hit, splat_detection, time_previous, view,
+  var AbstractGenerator, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GarbageCollector, Particle, PhysicalObject, Physics, Viewport, animation_loop, click_listener, crosshair, mouse_move_listener, platform_detection, platform_x_intersecting, rr, rw, shootables_hit, splat_detection, time_previous, view,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -101,19 +101,52 @@
 
   })();
 
+  Crosshair = (function(_super) {
+
+    __extends(Crosshair, _super);
+
+    function Crosshair(view) {
+      var bullet, _ref;
+      this.aim({
+        x: view.width / 2,
+        y: view.height / 2
+      });
+      bullet = new Bullet(0, 0);
+      _ref = [bullet.width, bullet.height], this.width = _ref[0], this.height = _ref[1];
+      this.color = Color.string(255, 255, 0, 0.1);
+      this.color_dot = Color.black();
+    }
+
+    Crosshair.prototype.aim = function(point) {
+      this.center = point;
+      this.x = point.x - this.width / 2;
+      return this.y = point.y - this.height / 2;
+    };
+
+    Crosshair.prototype.render = function(view) {
+      view.context.fillStyle = this.color;
+      view.context.fillRect(this.x, this.y, this.width, this.height);
+      view.context.fillStyle = this.color_dot;
+      return view.context.fillRect(this.center.x, this.center.y, 4, 4);
+    };
+
+    return Crosshair;
+
+  })(PhysicalObject);
+
   Bullet = (function(_super) {
 
     __extends(Bullet, _super);
 
     function Bullet(x, y) {
+      this.width = this.size;
+      this.height = this.size;
       this.x = x - this.width / 2;
       this.y = y - this.height / 2;
       this.created_at = Date.now();
     }
 
-    Bullet.prototype.width = 64;
-
-    Bullet.prototype.height = 64;
+    Bullet.prototype.size = 64;
 
     return Bullet;
 
@@ -146,7 +179,33 @@
     };
 
     Escapee.prototype.render = function(view) {
-      return view.fillRect(this.x, this.y, this.width, this.height, this.color);
+      var time;
+      time = Date.now();
+      return this.drawRunning(view, time);
+    };
+
+    Escapee.prototype.drawRunning = function(view, time) {
+      var base, phase;
+      phase = Math.sin(time * 0.03);
+      base = view.world_to_view(this.x, this.y);
+      view.context.save();
+      view.context.translate(base.x, base.y);
+      view.context.save();
+      view.context.fillStyle = this.color;
+      view.context.rotate(phase * 0.2);
+      view.context.fillRect(0, 0, 16, 16);
+      view.context.fillStyle = Color.string(32, 32, 128);
+      view.context.fillRect(12, 4, 4, 4);
+      view.context.fillRect(8, 10, 8, 4);
+      view.context.restore();
+      view.context.translate(4, 16);
+      view.context.rotate(phase * 0.5 + 0.1);
+      view.context.fillStyle = this.color;
+      view.context.fillRect(0, 0, 8, 16);
+      view.context.rotate(phase * -1);
+      view.context.fillStyle = this.color;
+      view.context.fillRect(0, 0, 8, 16);
+      return view.context.restore();
     };
 
     Escapee.prototype.jump = function() {
@@ -504,6 +563,7 @@
       this.canvas.width = this.width;
       this.canvas.height = this.height;
       this.canvas.style.backgroundColor = "black";
+      this.canvas.style.cursor = "none";
       this.context = this.canvas.getContext("2d");
       _ref = [this.canvas.width, this.canvas.height], this.width = _ref[0], this.height = _ref[1];
       _ref2 = [0, 0], this.x = _ref2[0], this.y = _ref2[1];
@@ -524,13 +584,22 @@
       };
     };
 
+    Viewport.prototype.world_to_view = function(x, y) {
+      return {
+        x: x - this.x,
+        y: y - this.y
+      };
+    };
+
     Viewport.prototype.clear = function() {
       return this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     };
 
     Viewport.prototype.fillRect = function(x, y, width, height, fillStyle) {
+      var base;
+      base = this.world_to_view(x, y);
       this.context.fillStyle = fillStyle;
-      return this.context.fillRect(x - this.x, y - this.y, width, height);
+      return this.context.fillRect(base.x, base.y, width, height);
     };
 
     return Viewport;
@@ -610,6 +679,8 @@
 
   objects.push(new DebugInfo(view, objects));
 
+  objects.push(crosshair = new Crosshair(view));
+
   new EscapeeGenerator(view, objects).start();
 
   new BuildingGenerator(view, objects).start();
@@ -654,7 +725,18 @@
     });
   };
 
+  mouse_move_listener = function(event) {
+    var point;
+    point = {
+      x: event.offsetX,
+      y: event.offsetY
+    };
+    return crosshair.aim(point);
+  };
+
   view.canvas.addEventListener("click", click_listener);
+
+  view.canvas.addEventListener("mousemove", mouse_move_listener);
 
   animation_loop();
 
