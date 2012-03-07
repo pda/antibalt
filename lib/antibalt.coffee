@@ -84,11 +84,34 @@ class Escapee extends PhysicalObject
 class Building extends PhysicalObject
   platform: true
   constructor: (@x, @y, @width, view_height) ->
-    @color = Color.gray rr 64, 128
+    @color = Color.gray(rw(64, 16))
     @height = view_height - @y
+    @calculate_windows()
   should_gc: (view) -> @right_x() < view.x
   render: (view) ->
     view.fillRect(@x, @y, @width, @height, @color)
+    @draw_windows()
+  calculate_windows: ->
+    min_width = rw(48, 16)
+    @window_height = rw(32, 8)
+    @window_margin_x = mx = rr(4, 8)
+    @window_margin_y = my = rr(16, 24)
+    @windows_per_row = per_row = Math.floor((@width - mx) / (min_width + mx))
+    @window_width = (@width - mx - (per_row * mx)) / per_row
+    @window_rows = Math.ceil(@height / (@window_height + my))
+    @window_color = Color.gray(16)
+  nth_window_x: (col) ->
+    mx = @window_margin_x
+    @x + mx + (col * (mx + @window_width))
+  nth_window_y: (row) ->
+    my = @window_margin_y
+    @y + my + (row * (my + @window_height))
+  draw_windows: ->
+    _(@window_rows).times (row) => @draw_window_row(row)
+  draw_window_row: (row) ->
+    y = @nth_window_y(row)
+    _(@windows_per_row).times (n) =>
+      view.fillRect(@nth_window_x(n), y, @window_width, @window_height, @window_color)
 
 class Explosion
   constructor: (@objects, @x, @y) ->
@@ -144,7 +167,7 @@ class BuildingGenerator extends AbstractGenerator
   generate: -> @build() while @latest.right_x() < @view.right_x() + 100
   build: -> @objects.unshift @latest = new Building(@x(), @y(), @width(), @view.height)
   gap: -> rr 10, 100
-  width: -> rr 100, @view.width / 2
+  width: -> rr 200, 400
   x: -> @latest.right_x() + @gap()
   y: ->
     r = rr(@latest.y - 64, @latest.y + 64)

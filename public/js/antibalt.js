@@ -198,8 +198,9 @@
       this.x = x;
       this.y = y;
       this.width = width;
-      this.color = Color.gray(rr(64, 128));
+      this.color = Color.gray(rw(64, 16));
       this.height = view_height - this.y;
+      this.calculate_windows();
     }
 
     Building.prototype.should_gc = function(view) {
@@ -207,7 +208,48 @@
     };
 
     Building.prototype.render = function(view) {
-      return view.fillRect(this.x, this.y, this.width, this.height, this.color);
+      view.fillRect(this.x, this.y, this.width, this.height, this.color);
+      return this.draw_windows();
+    };
+
+    Building.prototype.calculate_windows = function() {
+      var min_width, mx, my, per_row;
+      min_width = rw(48, 16);
+      this.window_height = rw(32, 8);
+      this.window_margin_x = mx = rr(4, 8);
+      this.window_margin_y = my = rr(16, 24);
+      this.windows_per_row = per_row = Math.floor((this.width - mx) / (min_width + mx));
+      this.window_width = (this.width - mx - (per_row * mx)) / per_row;
+      this.window_rows = Math.ceil(this.height / (this.window_height + my));
+      return this.window_color = Color.gray(16);
+    };
+
+    Building.prototype.nth_window_x = function(col) {
+      var mx;
+      mx = this.window_margin_x;
+      return this.x + mx + (col * (mx + this.window_width));
+    };
+
+    Building.prototype.nth_window_y = function(row) {
+      var my;
+      my = this.window_margin_y;
+      return this.y + my + (row * (my + this.window_height));
+    };
+
+    Building.prototype.draw_windows = function() {
+      var _this = this;
+      return _(this.window_rows).times(function(row) {
+        return _this.draw_window_row(row);
+      });
+    };
+
+    Building.prototype.draw_window_row = function(row) {
+      var y,
+        _this = this;
+      y = this.nth_window_y(row);
+      return _(this.windows_per_row).times(function(n) {
+        return view.fillRect(_this.nth_window_x(n), y, _this.window_width, _this.window_height, _this.window_color);
+      });
     };
 
     return Building;
@@ -380,7 +422,7 @@
     };
 
     BuildingGenerator.prototype.width = function() {
-      return rr(100, this.view.width / 2);
+      return rr(200, 400);
     };
 
     BuildingGenerator.prototype.x = function() {
