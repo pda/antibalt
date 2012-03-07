@@ -99,29 +99,9 @@
       this.created_at = Date.now();
     }
 
-    Bullet.prototype.age = function() {
-      return Date.now() - this.created_at;
-    };
-
-    Bullet.prototype.color = function() {
-      var c, opacity;
-      opacity = Math.max(0, Math.min(0.4, 1 - this.age() / 400));
-      c = Color.string(255, 255, 0, opacity);
-      console.log(c);
-      return c;
-    };
-
     Bullet.prototype.width = 64;
 
     Bullet.prototype.height = 64;
-
-    Bullet.prototype.render = function(view) {
-      return view.fillRect(this.x, this.y, this.width, this.height, this.color());
-    };
-
-    Bullet.prototype.should_gc = function() {
-      return this.age() > 1000;
-    };
 
     return Bullet;
 
@@ -162,14 +142,23 @@
       return this.velocity.y = rr(-48, -24);
     };
 
-    Escapee.prototype.splat = function(objects) {
+    Escapee.prototype.die = function() {
       this.dead = true;
       this.gravity = true;
       this.weight = 0.4;
-      this.velocity = {
+      return this.velocity = {
         x: 0,
         y: 0
       };
+    };
+
+    Escapee.prototype.splat = function(objects) {
+      this.die();
+      return new Explosion(objects, this.x, this.y).splat();
+    };
+
+    Escapee.prototype.bang = function(objects) {
+      this.die();
       return new Explosion(objects, this.x, this.y).bang();
     };
 
@@ -221,7 +210,7 @@
       this.y = y;
     }
 
-    Explosion.prototype.bang = function() {
+    Explosion.prototype.splat = function() {
       var _this = this;
       return _(32).times(function() {
         var c, p, v;
@@ -229,8 +218,36 @@
           x: rr(4, 16),
           y: rr(-32, 16)
         };
-        c = Color.string(rr(196, 255), 0, 0);
-        p = new Particle(_this.x, _this.y, 8, 8, v, 0.6, c);
+        c = Color.string(rr(128, 255), 0, 0);
+        p = new Particle(_this.x, _this.y, v, 0.6, c);
+        return _this.objects.push(p);
+      });
+    };
+
+    Explosion.prototype.bang = function() {
+      var _this = this;
+      return _(32).times(function() {
+        var c, p, v;
+        v = {
+          x: rr(-16, 16),
+          y: rr(-32, 16)
+        };
+        c = Color.string(rr(128, 255), 0, 0);
+        p = new Particle(_this.x, _this.y, v, 0.6, c);
+        return _this.objects.push(p);
+      });
+    };
+
+    Explosion.prototype.bullet = function() {
+      var _this = this;
+      return _(32).times(function() {
+        var c, p, v;
+        v = {
+          x: rr(0, 4),
+          y: rr(-16, -8)
+        };
+        c = Color.gray(rw(128, 64), 0.5);
+        p = new Particle(_this.x + rw(0, 16), _this.y + rw(0, 16), v, 0.05, c);
         return _this.objects.push(p);
       });
     };
@@ -247,16 +264,18 @@
 
     Particle.prototype.gravity = true;
 
-    function Particle(x, y, width, height, velocity, weight, color) {
+    function Particle(x, y, velocity, weight, color) {
       this.x = x;
       this.y = y;
-      this.width = width;
-      this.height = height;
       this.velocity = velocity;
       this.weight = weight;
       this.color = color;
       this.expiry = Date.now() + 1000;
     }
+
+    Particle.prototype.width = 8;
+
+    Particle.prototype.height = 8;
 
     Particle.prototype.render = function(view) {
       return view.fillRect(this.x, this.y, this.width, this.height, this.color);
@@ -570,11 +589,11 @@
   click_listener = function(event) {
     var bullet, point, shootables;
     point = view.view_to_world(event.offsetX, event.offsetY);
+    new Explosion(objects, point.x, point.y).bullet();
     bullet = new Bullet(point.x, point.y);
-    objects.unshift(bullet);
     shootables = shootables_hit(objects, bullet);
     return _(shootables).each(function(o) {
-      return o.splat(objects);
+      return o.bang(objects);
     });
   };
 

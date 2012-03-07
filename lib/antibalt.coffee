@@ -40,17 +40,8 @@ class Bullet extends PhysicalObject
     @x = x - @width / 2
     @y = y - @height / 2
     @created_at = Date.now() # evil global
-  age: -> Date.now() - @created_at
-  color: ->
-    opacity = Math.max(0, Math.min(0.4, 1 - @age() / 400))
-    c = Color.string(255, 255, 0, opacity)
-    console.log c
-    c
   width: 64
   height: 64
-  render: (view) ->
-    view.fillRect(@x, @y, @width, @height, @color())
-  should_gc: -> @age() > 1000
 
 class Escapee extends PhysicalObject
   gravity: true
@@ -66,11 +57,16 @@ class Escapee extends PhysicalObject
   jump: ->
     @gravity = true
     @velocity.y = rr(-48, -24)
-  splat: (objects) ->
+  die: ->
     @dead = true
     @gravity = true
     @weight = 0.4
     @velocity = { x: 0, y: 0 }
+  splat: (objects) ->
+    @die()
+    new Explosion(objects, @x, @y).splat()
+  bang: (objects) ->
+    @die()
     new Explosion(objects, @x, @y).bang()
   walk_on_platform: (p) ->
     @gravity = false
@@ -90,18 +86,32 @@ class Building extends PhysicalObject
 
 class Explosion
   constructor: (@objects, @x, @y) ->
-  bang: ->
+  splat: ->
     _(32).times =>
       v = { x: rr(4, 16), y: rr(-32, 16) }
-      c = Color.string(rr(196,255), 0, 0)
-      p = new Particle(@x, @y, 8, 8, v, 0.6, c)
+      c = Color.string(rr(128, 255), 0, 0)
+      p = new Particle(@x, @y, v, 0.6, c)
+      @objects.push p
+  bang: ->
+    _(32).times =>
+      v = { x: rr(-16, 16), y: rr(-32, 16) }
+      c = Color.string(rr(128, 255), 0, 0)
+      p = new Particle(@x, @y, v, 0.6, c)
+      @objects.push p
+  bullet: ->
+    _(32).times =>
+      v = { x: rr(0, 4), y: rr(-16, -8) }
+      c = Color.gray(rw(128, 64), 0.5)
+      p = new Particle(@x + rw(0, 16), @y + rw(0, 16), v, 0.05, c)
       @objects.push p
 
 class Particle extends PhysicalObject
   particle: true
   gravity: true
-  constructor: (@x, @y, @width, @height, @velocity, @weight, @color) ->
+  constructor: (@x, @y, @velocity, @weight, @color) ->
     @expiry = Date.now() + 1000 # evil global
+  width: 8
+  height: 8
   render: (view) -> view.fillRect(@x, @y, @width, @height, @color)
   should_gc: (view) -> Date.now() >= @expiry
 
@@ -256,11 +266,11 @@ shootables_hit = (objects, bullet) ->
 
 click_listener = (event) ->
   point = view.view_to_world(event.offsetX, event.offsetY)
+  new Explosion(objects, point.x, point.y).bullet()
   bullet = new Bullet(point.x, point.y)
-  objects.unshift bullet
   shootables = shootables_hit(objects, bullet)
   _(shootables).each (o) ->
-    o.splat(objects)
+    o.bang(objects)
 
 view.canvas.addEventListener("click", click_listener)
 
