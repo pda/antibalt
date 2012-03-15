@@ -452,7 +452,7 @@ d2r = (degrees) -> degrees * Math.PI / 180
 ##
 # Random stuff to refactor
 
-view = new Viewport(1200, 600)
+view = new Viewport(960, 640)
 game_physics = new GamePhysics
 rain_layer = new RainLayer(view)
 window.objects = []

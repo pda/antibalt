@@ -975,7 +975,7 @@
     return degrees * Math.PI / 180;
   };
 
-  view = new Viewport(1200, 600);
+  view = new Viewport(960, 640);
 
   game_physics = new GamePhysics;
 
