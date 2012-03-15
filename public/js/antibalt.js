@@ -1,5 +1,5 @@
 (function() {
-  var Animator, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GamePhysics, GarbageCollector, Gun, IntervalCommand, Particle, PhysicalObject, Physics, Viewport, animator, crosshair, game_physics, interval_commands, rr, rw, ticker, view,
+  var Animator, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GamePhysics, GarbageCollector, Gun, IntervalCommand, Particle, PhysicalObject, Physics, Viewport, animator, crosshair, debug, game_physics, interval_commands, rr, rw, ticker, view,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
@@ -517,7 +517,7 @@
     };
 
     EscapeeGenerator.prototype.execute = function() {
-      return objects.unshift(new Escapee(this.view.x, rr(0, this.view.height / 4)));
+      return objects.push(new Escapee(this.view.x, rr(0, this.view.height / 4)));
     };
 
     return EscapeeGenerator;
@@ -537,7 +537,7 @@
     };
 
     BuildingGenerator.prototype.execute_first = function() {
-      return this.objects.unshift(this.latest = new Building(0, view.height / 2, view.width / 2, this.view.height));
+      return this.objects.push(this.latest = new Building(0, view.height / 2, view.width / 2, this.view.height));
     };
 
     BuildingGenerator.prototype.execute = function() {
@@ -550,7 +550,7 @@
     };
 
     BuildingGenerator.prototype.build = function() {
-      return this.objects.unshift(this.latest = new Building(this.x(), this.y(), this.width(), this.view.height));
+      return this.objects.push(this.latest = new Building(this.x(), this.y(), this.width(), this.view.height));
     };
 
     BuildingGenerator.prototype.gap = function() {
@@ -813,27 +813,22 @@
 
   window.objects = [];
 
-  objects.push(new DebugInfo(view, objects));
+  debug = new DebugInfo(view, objects);
 
   objects.push(crosshair = new Crosshair(view));
 
   interval_commands = [new EscapeeGenerator(view, objects), new BuildingGenerator(view, objects), new GarbageCollector(view, objects)];
 
   ticker = function(seconds_elapsed) {
-    var i, o, _len, _results;
+    var i, o, _len;
     view.clear();
     Physics.apply_velocity(view, seconds_elapsed);
-    _results = [];
     for (i = 0, _len = objects.length; i < _len; i++) {
       o = objects[i];
       game_physics.apply_to_object(o, objects, seconds_elapsed);
-      if (o.render) {
-        _results.push(o.render(view));
-      } else {
-        _results.push(void 0);
-      }
+      if (o.render) o.render(view);
     }
-    return _results;
+    return debug.render(view);
   };
 
   animator = new Animator(ticker, interval_commands);

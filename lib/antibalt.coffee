@@ -241,14 +241,14 @@ class IntervalCommand
 
 class EscapeeGenerator extends IntervalCommand
   delay: -> rw(500, 300)
-  execute: -> objects.unshift new Escapee(@view.x, rr(0, @view.height / 4))
+  execute: -> objects.push new Escapee(@view.x, rr(0, @view.height / 4))
 
 class BuildingGenerator extends IntervalCommand
   delay: -> 500
   execute_first: ->
-    @objects.unshift @latest = new Building(0, view.height / 2, view.width / 2, @view.height)
+    @objects.push @latest = new Building(0, view.height / 2, view.width / 2, @view.height)
   execute: -> @build() while @latest.right_x() < @view.right_x() + 100
-  build: -> @objects.unshift @latest = new Building(@x(), @y(), @width(), @view.height)
+  build: -> @objects.push @latest = new Building(@x(), @y(), @width(), @view.height)
   gap: -> rr 10, 100
   width: -> rr 200, 400
   x: -> @latest.right_x() + @gap()
@@ -375,7 +375,7 @@ rw = (mid, radius) -> rr(mid - radius, mid + radius)
 view = new Viewport(1200, 600)
 game_physics = new GamePhysics
 window.objects = []
-objects.push new DebugInfo(view, objects)
+debug = new DebugInfo(view, objects)
 objects.push crosshair = new Crosshair(view)
 
 interval_commands = [
@@ -390,6 +390,7 @@ ticker = (seconds_elapsed) ->
   for o, i in objects
     game_physics.apply_to_object(o, objects, seconds_elapsed)
     o.render(view) if o.render
+  debug.render(view)
 
 animator = new Animator(ticker, interval_commands)
 
