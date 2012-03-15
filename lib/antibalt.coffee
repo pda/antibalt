@@ -224,6 +224,15 @@ class BuildingGenerator extends IntervalCommand
     @bounded(r, quarter, @view.height - tenth)
   bounded: (i, min, max) -> _.max([ _.min([ i, max ]), min])
 
+class GarbageCollector extends IntervalCommand
+  delay: -> 100
+  execute: ->
+    _.chain(@objects).
+      map((o, i) => i if o.should_gc && o.should_gc(@view)).
+      filter((i) -> i?).
+      reverse().
+      each((i) => @objects.splice(i, 1))
+
 class DebugInfo
   width: 200
   height: 100
@@ -268,19 +277,6 @@ class Viewport
     base = @world_to_view(x, y)
     @context.fillStyle = fillStyle
     @context.fillRect base.x, base.y, width, height
-
-class GarbageCollector
-  constructor: (@view, @objects) ->
-  start: -> @keep_collecting()
-  keep_collecting: =>
-    @collect()
-    _.delay @keep_collecting, 100
-  collect: ->
-    _.chain(@objects).
-      map((o, i) => i if o.should_gc && o.should_gc(@view)).
-      filter((i) -> i?).
-      reverse().
-      each((i) => @objects.splice(i, 1))
 
 ##
 # Helper functions

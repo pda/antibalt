@@ -505,6 +505,33 @@
 
   })(IntervalCommand);
 
+  GarbageCollector = (function(_super) {
+
+    __extends(GarbageCollector, _super);
+
+    function GarbageCollector() {
+      GarbageCollector.__super__.constructor.apply(this, arguments);
+    }
+
+    GarbageCollector.prototype.delay = function() {
+      return 100;
+    };
+
+    GarbageCollector.prototype.execute = function() {
+      var _this = this;
+      return _.chain(this.objects).map(function(o, i) {
+        if (o.should_gc && o.should_gc(_this.view)) return i;
+      }).filter(function(i) {
+        return i != null;
+      }).reverse().each(function(i) {
+        return _this.objects.splice(i, 1);
+      });
+    };
+
+    return GarbageCollector;
+
+  })(IntervalCommand);
+
   DebugInfo = (function() {
 
     DebugInfo.prototype.width = 200;
@@ -604,38 +631,6 @@
     };
 
     return Viewport;
-
-  })();
-
-  GarbageCollector = (function() {
-
-    function GarbageCollector(view, objects) {
-      this.view = view;
-      this.objects = objects;
-      this.keep_collecting = __bind(this.keep_collecting, this);
-    }
-
-    GarbageCollector.prototype.start = function() {
-      return this.keep_collecting();
-    };
-
-    GarbageCollector.prototype.keep_collecting = function() {
-      this.collect();
-      return _.delay(this.keep_collecting, 100);
-    };
-
-    GarbageCollector.prototype.collect = function() {
-      var _this = this;
-      return _.chain(this.objects).map(function(o, i) {
-        if (o.should_gc && o.should_gc(_this.view)) return i;
-      }).filter(function(i) {
-        return i != null;
-      }).reverse().each(function(i) {
-        return _this.objects.splice(i, 1);
-      });
-    };
-
-    return GarbageCollector;
 
   })();
 
