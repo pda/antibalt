@@ -348,6 +348,7 @@ class GamePhysics
 
 class Animator
   constructor: (@ticker, @interval_commands) ->
+    @initialize_request_animation_frame()
     _(@interval_commands).each (c) =>
       c.pause_when => @seconds_elapsed(Date.now()) > @pause_threshold * 2
   start: ->
@@ -362,9 +363,20 @@ class Animator
       _(@interval_commands).each (ic) -> ic.unpause()
     else
       @ticker(seconds_elapsed)
-    webkitRequestAnimationFrame(@keep_animating)
+    @request_animation_frame(@keep_animating)
   pause_threshold: 0.2
   seconds_elapsed: (now) -> (now - @time_previous) / 1000
+  initialize_request_animation_frame: ->
+    # adapted from http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+    @request_animation_frame = _.bind(
+       window.requestAnimationFrame       ||
+       window.webkitRequestAnimationFrame ||
+       window.mozRequestAnimationFrame    ||
+       window.oRequestAnimationFrame      ||
+       window.msRequestAnimationFrame     ||
+       ((callback) -> window.setTimeout(callback, 1000 / 60)),
+       window
+    )
 
 class BackgroundTile extends PhysicalObject
   background: true

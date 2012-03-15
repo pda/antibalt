@@ -769,6 +769,7 @@
       this.ticker = ticker;
       this.interval_commands = interval_commands;
       this.keep_animating = __bind(this.keep_animating, this);
+      this.initialize_request_animation_frame();
       _(this.interval_commands).each(function(c) {
         return c.pause_when(function() {
           return _this.seconds_elapsed(Date.now()) > _this.pause_threshold * 2;
@@ -795,13 +796,19 @@
       } else {
         this.ticker(seconds_elapsed);
       }
-      return webkitRequestAnimationFrame(this.keep_animating);
+      return this.request_animation_frame(this.keep_animating);
     };
 
     Animator.prototype.pause_threshold = 0.2;
 
     Animator.prototype.seconds_elapsed = function(now) {
       return (now - this.time_previous) / 1000;
+    };
+
+    Animator.prototype.initialize_request_animation_frame = function() {
+      return this.request_animation_frame = _.bind(window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || (function(callback) {
+        return window.setTimeout(callback, 1000 / 60);
+      }), window);
     };
 
     return Animator;
