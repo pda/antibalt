@@ -1,5 +1,5 @@
 (function() {
-  var Animator, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GarbageCollector, IntervalCommand, Particle, PhysicalObject, Physics, Viewport, animator, click_listener, crosshair, interval_commands, mouse_move_listener, platform_detection, platform_x_intersecting, rr, rw, shootables_hit, splat_detection, ticker, view,
+  var Animator, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GamePhysics, GarbageCollector, IntervalCommand, Particle, PhysicalObject, Physics, Viewport, animator, click_listener, crosshair, game_physics, interval_commands, mouse_move_listener, rr, rw, shootables_hit, ticker, view,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -654,6 +654,49 @@
 
   })();
 
+  GamePhysics = (function() {
+
+    function GamePhysics() {}
+
+    GamePhysics.prototype.apply_to_object = function(o, objects, seconds_elapsed) {
+      if (o.velocity) Physics.apply_x_velocity(o, seconds_elapsed);
+      if (o.platformable) game_physics.splat_detection(o, objects);
+      if (o.gravity) Physics.apply_gravity(o, seconds_elapsed);
+      if (o.velocity) Physics.apply_y_velocity(o, seconds_elapsed);
+      if (o.platformable) return game_physics.platform_detection(o, objects);
+    };
+
+    GamePhysics.prototype.platform_x_intersecting = function(o, objects) {
+      return _(objects).detect(function(other) {
+        return other.platform && other.x_intersecting(o);
+      });
+    };
+
+    GamePhysics.prototype.splat_detection = function(o, objects) {
+      var platform;
+      if (o.dead) return;
+      platform = this.platform_x_intersecting(o, objects);
+      if (platform && platform.intersecting(o)) return o.splat(objects);
+    };
+
+    GamePhysics.prototype.platform_detection = function(o, objects) {
+      var distance_to_edge, platform;
+      if (o.dead) return;
+      platform = this.platform_x_intersecting(o, objects);
+      if (platform && o.gravity) {
+        if (o.bottom_y() >= platform.y) o.walk_on_platform(platform);
+      }
+      if (platform && !o.gravity) {
+        distance_to_edge = platform.right_x() - o.x;
+        if (distance_to_edge >= 0 && distance_to_edge < 100) o.jump();
+      }
+      if (!platform && !o.gravity) return o.fall();
+    };
+
+    return GamePhysics;
+
+  })();
+
   Animator = (function() {
 
     function Animator(ticker, interval_commands) {
@@ -708,34 +751,9 @@
     return rr(mid - radius, mid + radius);
   };
 
-  platform_x_intersecting = function(o, objects) {
-    return _(objects).detect(function(other) {
-      return other.platform && other.x_intersecting(o);
-    });
-  };
-
-  splat_detection = function(o, objects) {
-    var platform;
-    if (o.dead) return;
-    platform = platform_x_intersecting(o, objects);
-    if (platform && platform.intersecting(o)) return o.splat(objects);
-  };
-
-  platform_detection = function(o, objects) {
-    var distance_to_edge, platform;
-    if (o.dead) return;
-    platform = platform_x_intersecting(o, objects);
-    if (platform && o.gravity) {
-      if (o.bottom_y() >= platform.y) o.walk_on_platform(platform);
-    }
-    if (platform && !o.gravity) {
-      distance_to_edge = platform.right_x() - o.x;
-      if (distance_to_edge >= 0 && distance_to_edge < 100) o.jump();
-    }
-    if (!platform && !o.gravity) return o.fall();
-  };
-
   view = new Viewport(1200, 600);
+
+  game_physics = new GamePhysics;
 
   window.objects = [];
 
@@ -752,11 +770,7 @@
     _results = [];
     for (i = 0, _len = objects.length; i < _len; i++) {
       o = objects[i];
-      if (o.velocity) Physics.apply_x_velocity(o, seconds_elapsed);
-      if (o.platformable) splat_detection(o, objects);
-      if (o.gravity) Physics.apply_gravity(o, seconds_elapsed);
-      if (o.velocity) Physics.apply_y_velocity(o, seconds_elapsed);
-      if (o.platformable) platform_detection(o, objects);
+      game_physics.apply_to_object(o, objects, seconds_elapsed);
       if (o.render) {
         _results.push(o.render(view));
       } else {

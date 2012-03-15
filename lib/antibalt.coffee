@@ -290,6 +290,33 @@ class Viewport
     @context.fillStyle = fillStyle
     @context.fillRect base.x, base.y, width, height
 
+class GamePhysics
+  apply_to_object: (o, objects, seconds_elapsed) ->
+    Physics.apply_x_velocity(o, seconds_elapsed) if o.velocity
+    game_physics.splat_detection(o, objects) if o.platformable
+    Physics.apply_gravity(o, seconds_elapsed) if o.gravity
+    Physics.apply_y_velocity(o, seconds_elapsed) if o.velocity
+    game_physics.platform_detection(o, objects) if o.platformable
+  platform_x_intersecting: (o, objects) ->
+    _(objects).detect (other) -> other.platform && other.x_intersecting(o)
+  splat_detection: (o, objects) ->
+    return if o.dead
+    platform = @platform_x_intersecting(o, objects)
+    if platform && platform.intersecting(o)
+        o.splat(objects)
+  platform_detection: (o, objects) ->
+    return if o.dead
+    platform = @platform_x_intersecting(o, objects)
+    if platform && o.gravity
+      if o.bottom_y() >= platform.y
+        o.walk_on_platform(platform)
+    if platform && !o.gravity
+      distance_to_edge = platform.right_x() - o.x
+      if distance_to_edge >= 0 && distance_to_edge < 100
+        o.jump()
+    if !platform && !o.gravity
+      o.fall()
+
 class Animator
   constructor: (@ticker, @interval_commands) ->
     _(@interval_commands).each (c) =>
@@ -322,29 +349,8 @@ rw = (mid, radius) -> rr(mid - radius, mid + radius)
 ##
 # Random stuff to refactor
 
-platform_x_intersecting = (o, objects) ->
-  _(objects).detect (other) -> other.platform && other.x_intersecting(o)
-
-splat_detection = (o, objects) ->
-  return if o.dead
-  platform = platform_x_intersecting(o, objects)
-  if platform && platform.intersecting(o)
-      o.splat(objects)
-
-platform_detection = (o, objects) ->
-  return if o.dead
-  platform = platform_x_intersecting(o, objects)
-  if platform && o.gravity
-    if o.bottom_y() >= platform.y
-      o.walk_on_platform(platform)
-  if platform && !o.gravity
-    distance_to_edge = platform.right_x() - o.x
-    if distance_to_edge >= 0 && distance_to_edge < 100
-      o.jump()
-  if !platform && !o.gravity
-    o.fall()
-
 view = new Viewport(1200, 600)
+game_physics = new GamePhysics
 window.objects = []
 objects.push new DebugInfo(view, objects)
 objects.push crosshair = new Crosshair(view)
@@ -359,11 +365,7 @@ ticker = (seconds_elapsed) ->
   view.clear()
   Physics.apply_velocity(view, seconds_elapsed)
   for o, i in objects
-    Physics.apply_x_velocity(o, seconds_elapsed) if o.velocity
-    splat_detection(o, objects) if o.platformable
-    Physics.apply_gravity(o, seconds_elapsed) if o.gravity
-    Physics.apply_y_velocity(o, seconds_elapsed) if o.velocity
-    platform_detection(o, objects) if o.platformable
+    game_physics.apply_to_object(o, objects, seconds_elapsed)
     o.render(view) if o.render
 
 animator = new Animator(ticker, interval_commands)
