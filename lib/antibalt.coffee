@@ -200,9 +200,21 @@ class IntervalCommand
     @execute_first() if @execute_first
     @keep_running()
     this
+  pause: ->
+    @paused = true
+  unpause: ->
+    if @paused
+      @paused = false
+      @keep_running()
+  pause_when: (fn) ->
+    @pause_when_fn = fn
   keep_running: =>
-    @execute()
-    _.delay @keep_running, @delay()
+    return if @paused
+    if @pause_when_fn?()
+      @pause()
+    else
+      @execute()
+      _.delay @keep_running, @delay()
 
 class EscapeeGenerator extends IntervalCommand
   delay: -> rw(500, 300)
@@ -319,25 +331,37 @@ objects.push new DebugInfo(view, objects)
 
 objects.push crosshair = new Crosshair(view)
 
-new EscapeeGenerator(view, objects).start()
-new BuildingGenerator(view, objects).start()
-new GarbageCollector(view, objects).start()
+interval_commands = [
+  new EscapeeGenerator(view, objects).start()
+  new BuildingGenerator(view, objects).start()
+  new GarbageCollector(view, objects).start()
+]
+
+SLOWEST_FRAME = 0.2
 
 time_previous = Date.now() # milliseconds
+
+# stop interval commands when rendering hasn't happened recently.
+_(interval_commands).each (ic) ->
+  ic.pause_when -> (Date.now() - time_previous) / 1000 > (SLOWEST_FRAME * 2)
 
 animation_loop = ->
   time_now = Date.now()
   seconds_elapsed = (time_now - time_previous) / 1000
   time_previous = time_now
-  view.clear()
-  Physics.apply_velocity(view, seconds_elapsed)
-  for o, i in objects
-    Physics.apply_x_velocity(o, seconds_elapsed) if o.velocity
-    splat_detection(o, objects) if o.platformable
-    Physics.apply_gravity(o, seconds_elapsed) if o.gravity
-    Physics.apply_y_velocity(o, seconds_elapsed) if o.velocity
-    platform_detection(o, objects) if o.platformable
-    o.render(view) if o.render
+  if seconds_elapsed > SLOWEST_FRAME
+    # first frame rendered for a while; unpause interval commands.
+    _(interval_commands).each (ic) -> ic.unpause()
+  else
+    view.clear()
+    Physics.apply_velocity(view, seconds_elapsed)
+    for o, i in objects
+      Physics.apply_x_velocity(o, seconds_elapsed) if o.velocity
+      splat_detection(o, objects) if o.platformable
+      Physics.apply_gravity(o, seconds_elapsed) if o.gravity
+      Physics.apply_y_velocity(o, seconds_elapsed) if o.velocity
+      platform_detection(o, objects) if o.platformable
+      o.render(view) if o.render
   webkitRequestAnimationFrame(animation_loop)
 
 shootables_hit = (objects, bullet) ->
