@@ -300,7 +300,8 @@ class Viewport
     @canvas = document.getElementById("antibalt")
     @canvas.width = @width
     @canvas.height = @height
-    @canvas.style.backgroundColor = Color.string(8, 8, 16)
+    @default_background_color = Color.string(8, 8, 16)
+    @set_background_color()
     @canvas.style.cursor = "none"
     @context = @canvas.getContext("2d")
     [ @width, @height ] = [ @canvas.width, @canvas.height ]
@@ -309,6 +310,8 @@ class Viewport
   right_x: -> @x + @width
   view_to_world: (x, y) -> { x: x + @x, y: y + @y }
   world_to_view: (x, y) -> { x: x - @x, y: y - @y }
+  set_background_color: (color) ->
+    @canvas.style.backgroundColor = color || @default_background_color
   clear: ->
     @context.clearRect(0, 0, @canvas.width, @canvas.height)
   fillRect: (x, y, width, height, fillStyle) ->
@@ -387,8 +390,20 @@ class BackgroundGenerator extends IntervalCommand
   execute: -> @build() while @latest.right_x() < @view.right_x() + 100
   build: -> @objects.unshift @latest = new BackgroundTile(@x(), @view.height, @view.velocity.x)
   width: -> rr(200, 400)
-  x: -> @latest.right_x()
+  x: -> @latest.right_x() + rr(0, 8)
   bounded: (i, min, max) -> _.max([ _.min([ i, max ]), min])
+
+class LightningFlasher extends IntervalCommand
+  delay: -> rr(100, 10000)
+  execute_first: -> @first = true
+  execute: ->
+    if @first
+      @first = false
+    else
+      blue_factor = rr(32, 128)
+      color = Color.string(255 - blue_factor, 255 - blue_factor, 255)
+      @view.set_background_color(color)
+      _.delay (=> @view.set_background_color()), 50
 
 ##
 # Helper functions
@@ -416,6 +431,7 @@ interval_commands = [
   new BuildingGenerator(view, objects)
   new GarbageCollector(view, objects)
   new BackgroundGenerator(view, objects)
+  new LightningFlasher(view, objects)
 ]
 
 ticker = (seconds_elapsed) ->

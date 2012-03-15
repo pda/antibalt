@@ -1,5 +1,5 @@
 (function() {
-  var Animator, BackgroundGenerator, BackgroundTile, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GamePhysics, GarbageCollector, Gun, IntervalCommand, Particle, PhysicalObject, Physics, Viewport, animator, crosshair, d2r, debug, game_physics, interval_commands, rr, rw, ticker, view,
+  var Animator, BackgroundGenerator, BackgroundTile, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GamePhysics, GarbageCollector, Gun, IntervalCommand, LightningFlasher, Particle, PhysicalObject, Physics, Viewport, animator, crosshair, d2r, debug, game_physics, interval_commands, rr, rw, ticker, view,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
@@ -670,7 +670,8 @@
       this.canvas = document.getElementById("antibalt");
       this.canvas.width = this.width;
       this.canvas.height = this.height;
-      this.canvas.style.backgroundColor = Color.string(8, 8, 16);
+      this.default_background_color = Color.string(8, 8, 16);
+      this.set_background_color();
       this.canvas.style.cursor = "none";
       this.context = this.canvas.getContext("2d");
       _ref = [this.canvas.width, this.canvas.height], this.width = _ref[0], this.height = _ref[1];
@@ -697,6 +698,10 @@
         x: x - this.x,
         y: y - this.y
       };
+    };
+
+    Viewport.prototype.set_background_color = function(color) {
+      return this.canvas.style.backgroundColor = color || this.default_background_color;
     };
 
     Viewport.prototype.clear = function() {
@@ -873,7 +878,7 @@
     };
 
     BackgroundGenerator.prototype.x = function() {
-      return this.latest.right_x();
+      return this.latest.right_x() + rr(0, 8);
     };
 
     BackgroundGenerator.prototype.bounded = function(i, min, max) {
@@ -881,6 +886,41 @@
     };
 
     return BackgroundGenerator;
+
+  })(IntervalCommand);
+
+  LightningFlasher = (function(_super) {
+
+    __extends(LightningFlasher, _super);
+
+    function LightningFlasher() {
+      LightningFlasher.__super__.constructor.apply(this, arguments);
+    }
+
+    LightningFlasher.prototype.delay = function() {
+      return rr(100, 10000);
+    };
+
+    LightningFlasher.prototype.execute_first = function() {
+      return this.first = true;
+    };
+
+    LightningFlasher.prototype.execute = function() {
+      var blue_factor, color,
+        _this = this;
+      if (this.first) {
+        return this.first = false;
+      } else {
+        blue_factor = rr(32, 128);
+        color = Color.string(255 - blue_factor, 255 - blue_factor, 255);
+        this.view.set_background_color(color);
+        return _.delay((function() {
+          return _this.view.set_background_color();
+        }), 50);
+      }
+    };
+
+    return LightningFlasher;
 
   })(IntervalCommand);
 
@@ -906,16 +946,21 @@
 
   objects.push(crosshair = new Crosshair(view));
 
-  interval_commands = [new EscapeeGenerator(view, objects), new BuildingGenerator(view, objects), new GarbageCollector(view, objects), new BackgroundGenerator(view, objects)];
+  interval_commands = [new EscapeeGenerator(view, objects), new BuildingGenerator(view, objects), new GarbageCollector(view, objects), new BackgroundGenerator(view, objects), new LightningFlasher(view, objects)];
 
   ticker = function(seconds_elapsed) {
-    var i, o, _len;
+    var i, o, _len, _results;
     view.clear();
     Physics.apply_velocity(view, seconds_elapsed);
+    _results = [];
     for (i = 0, _len = objects.length; i < _len; i++) {
       o = objects[i];
       game_physics.apply_to_object(o, objects, seconds_elapsed);
-      if (o.render) o.render(view);
+      if (o.render) {
+        _results.push(o.render(view));
+      } else {
+        _results.push(void 0);
+      }
     }
     return debug.render(view);
   };
