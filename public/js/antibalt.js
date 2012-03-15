@@ -642,7 +642,7 @@
     };
 
     DebugInfo.prototype.render = function(view) {
-      view.context.fillStyle = Color.white(0.5);
+      view.context.fillStyle = Color.gray(196, 0.5);
       view.context.fillRect(this.x, this.y, this.width, this.height);
       return this.write(view, [
         "objects: " + objects.length, "platforms: " + _(objects).filter(function(o) {

@@ -285,7 +285,7 @@ class DebugInfo
     for line, i in lines
       view.context.fillText line, @x + @padding, @y + @padding + @lineHeight + i * @lineHeight
   render: (view) ->
-    view.context.fillStyle = Color.white(0.5)
+    view.context.fillStyle = Color.gray(196, 0.5)
     view.context.fillRect @x, @y, @width, @height
     this.write view, [
       "objects: #{objects.length}"
