@@ -290,6 +290,7 @@ class DebugInfo
       "platforms: " + _(objects).filter((o) -> o.platform).length
       "gravitables: " + _(objects).filter((o) -> o.gravity).length
       "particles: " + _(objects).filter((o) -> o.particle).length
+      "background: " + _(objects).filter((o) -> o.background).length
     ]
 
 class Viewport
@@ -297,7 +298,7 @@ class Viewport
     @canvas = document.getElementById("antibalt")
     @canvas.width = @width
     @canvas.height = @height
-    @canvas.style.backgroundColor = "black"
+    @canvas.style.backgroundColor = Color.string(8, 8, 16)
     @canvas.style.cursor = "none"
     @context = @canvas.getContext("2d")
     [ @width, @height ] = [ @canvas.width, @canvas.height ]
@@ -360,6 +361,33 @@ class Animator
   pause_threshold: 0.2
   seconds_elapsed: (now) -> (now - @time_previous) / 1000
 
+class BackgroundTile extends PhysicalObject
+  background: true
+  constructor: (@x, view_height, x_velocity) ->
+    @color = Color.gray(rr(0, 8))
+    @y = rr(0, 8) * 64
+    @width = rr(4, 8) * 64
+    @height = view_height + @width
+    @velocity = { x: x_velocity * 0.4, y: 1 }
+  should_gc: (view) -> @right_x() < view.x - 100
+  render: (view) ->
+    c = view.context
+    c.save()
+    c.translate(0, -128)
+    c.rotate(d2r(8))
+    view.fillRect(@x, @y, @width, @height, @color)
+    c.restore()
+
+class BackgroundGenerator extends IntervalCommand
+  delay: -> 500
+  execute_first: ->
+    @objects.unshift @latest = new BackgroundTile(0, @view.height, @view.velocity.x)
+  execute: -> @build() while @latest.right_x() < @view.right_x() + 100
+  build: -> @objects.unshift @latest = new BackgroundTile(@x(), @view.height, @view.velocity.x)
+  width: -> rr(200, 400)
+  x: -> @latest.right_x()
+  bounded: (i, min, max) -> _.max([ _.min([ i, max ]), min])
+
 ##
 # Helper functions
 
@@ -368,6 +396,9 @@ rr = (from, to) -> from + Math.floor(Math.random() * (to - from))
 
 # random within
 rw = (mid, radius) -> rr(mid - radius, mid + radius)
+
+# convert degrees to radians
+d2r = (degrees) -> degrees * Math.PI / 180
 
 ##
 # Random stuff to refactor
@@ -382,6 +413,7 @@ interval_commands = [
   new EscapeeGenerator(view, objects)
   new BuildingGenerator(view, objects)
   new GarbageCollector(view, objects)
+  new BackgroundGenerator(view, objects)
 ]
 
 ticker = (seconds_elapsed) ->

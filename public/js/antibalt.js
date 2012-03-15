@@ -1,5 +1,5 @@
 (function() {
-  var Animator, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GamePhysics, GarbageCollector, Gun, IntervalCommand, Particle, PhysicalObject, Physics, Viewport, animator, crosshair, debug, game_physics, interval_commands, rr, rw, ticker, view,
+  var Animator, BackgroundGenerator, BackgroundTile, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GamePhysics, GarbageCollector, Gun, IntervalCommand, Particle, PhysicalObject, Physics, Viewport, animator, crosshair, d2r, debug, game_physics, interval_commands, rr, rw, ticker, view,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
@@ -649,6 +649,8 @@
           return o.gravity;
         }).length, "particles: " + _(objects).filter(function(o) {
           return o.particle;
+        }).length, "background: " + _(objects).filter(function(o) {
+          return o.background;
         }).length
       ]);
     };
@@ -666,7 +668,7 @@
       this.canvas = document.getElementById("antibalt");
       this.canvas.width = this.width;
       this.canvas.height = this.height;
-      this.canvas.style.backgroundColor = "black";
+      this.canvas.style.backgroundColor = Color.string(8, 8, 16);
       this.canvas.style.cursor = "none";
       this.context = this.canvas.getContext("2d");
       _ref = [this.canvas.width, this.canvas.height], this.width = _ref[0], this.height = _ref[1];
@@ -799,12 +801,97 @@
 
   })();
 
+  BackgroundTile = (function(_super) {
+
+    __extends(BackgroundTile, _super);
+
+    BackgroundTile.prototype.background = true;
+
+    function BackgroundTile(x, view_height, x_velocity) {
+      this.x = x;
+      this.color = Color.gray(rr(0, 8));
+      this.y = rr(0, 8) * 64;
+      this.width = rr(4, 8) * 64;
+      this.height = view_height + this.width;
+      this.velocity = {
+        x: x_velocity * 0.4,
+        y: 1
+      };
+    }
+
+    BackgroundTile.prototype.should_gc = function(view) {
+      return this.right_x() < view.x - 100;
+    };
+
+    BackgroundTile.prototype.render = function(view) {
+      var c;
+      c = view.context;
+      c.save();
+      c.translate(0, -128);
+      c.rotate(d2r(8));
+      view.fillRect(this.x, this.y, this.width, this.height, this.color);
+      return c.restore();
+    };
+
+    return BackgroundTile;
+
+  })(PhysicalObject);
+
+  BackgroundGenerator = (function(_super) {
+
+    __extends(BackgroundGenerator, _super);
+
+    function BackgroundGenerator() {
+      BackgroundGenerator.__super__.constructor.apply(this, arguments);
+    }
+
+    BackgroundGenerator.prototype.delay = function() {
+      return 500;
+    };
+
+    BackgroundGenerator.prototype.execute_first = function() {
+      return this.objects.unshift(this.latest = new BackgroundTile(0, this.view.height, this.view.velocity.x));
+    };
+
+    BackgroundGenerator.prototype.execute = function() {
+      var _results;
+      _results = [];
+      while (this.latest.right_x() < this.view.right_x() + 100) {
+        _results.push(this.build());
+      }
+      return _results;
+    };
+
+    BackgroundGenerator.prototype.build = function() {
+      return this.objects.unshift(this.latest = new BackgroundTile(this.x(), this.view.height, this.view.velocity.x));
+    };
+
+    BackgroundGenerator.prototype.width = function() {
+      return rr(200, 400);
+    };
+
+    BackgroundGenerator.prototype.x = function() {
+      return this.latest.right_x();
+    };
+
+    BackgroundGenerator.prototype.bounded = function(i, min, max) {
+      return _.max([_.min([i, max]), min]);
+    };
+
+    return BackgroundGenerator;
+
+  })(IntervalCommand);
+
   rr = function(from, to) {
     return from + Math.floor(Math.random() * (to - from));
   };
 
   rw = function(mid, radius) {
     return rr(mid - radius, mid + radius);
+  };
+
+  d2r = function(degrees) {
+    return degrees * Math.PI / 180;
   };
 
   view = new Viewport(1200, 600);
@@ -817,7 +904,7 @@
 
   objects.push(crosshair = new Crosshair(view));
 
-  interval_commands = [new EscapeeGenerator(view, objects), new BuildingGenerator(view, objects), new GarbageCollector(view, objects)];
+  interval_commands = [new EscapeeGenerator(view, objects), new BuildingGenerator(view, objects), new GarbageCollector(view, objects), new BackgroundGenerator(view, objects)];
 
   ticker = function(seconds_elapsed) {
     var i, o, _len;
