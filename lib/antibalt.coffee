@@ -290,6 +290,26 @@ class Viewport
     @context.fillStyle = fillStyle
     @context.fillRect base.x, base.y, width, height
 
+class Animator
+  constructor: (@ticker, @interval_commands) ->
+    _(@interval_commands).each (c) =>
+      c.pause_when => @seconds_elapsed(Date.now()) > @pause_threshold * 2
+  start: ->
+    @time_previous = Date.now()
+    _(@interval_commands).each (c) -> c.start()
+    @keep_animating()
+  keep_animating: =>
+    seconds_elapsed = @seconds_elapsed(now = Date.now())
+    @time_previous = now
+    if seconds_elapsed > @pause_threshold
+      # first frame rendered for a while; unpause interval commands.
+      _(@interval_commands).each (ic) -> ic.unpause()
+    else
+      @ticker(seconds_elapsed)
+    webkitRequestAnimationFrame(@keep_animating)
+  pause_threshold: 0.2
+  seconds_elapsed: (now) -> (now - @time_previous) / 1000
+
 ##
 # Helper functions
 
@@ -326,43 +346,27 @@ platform_detection = (o, objects) ->
 
 view = new Viewport(1200, 600)
 window.objects = []
-
 objects.push new DebugInfo(view, objects)
-
 objects.push crosshair = new Crosshair(view)
 
 interval_commands = [
-  new EscapeeGenerator(view, objects).start()
-  new BuildingGenerator(view, objects).start()
-  new GarbageCollector(view, objects).start()
+  new EscapeeGenerator(view, objects)
+  new BuildingGenerator(view, objects)
+  new GarbageCollector(view, objects)
 ]
 
-SLOWEST_FRAME = 0.2
+ticker = (seconds_elapsed) ->
+  view.clear()
+  Physics.apply_velocity(view, seconds_elapsed)
+  for o, i in objects
+    Physics.apply_x_velocity(o, seconds_elapsed) if o.velocity
+    splat_detection(o, objects) if o.platformable
+    Physics.apply_gravity(o, seconds_elapsed) if o.gravity
+    Physics.apply_y_velocity(o, seconds_elapsed) if o.velocity
+    platform_detection(o, objects) if o.platformable
+    o.render(view) if o.render
 
-time_previous = Date.now() # milliseconds
-
-# stop interval commands when rendering hasn't happened recently.
-_(interval_commands).each (ic) ->
-  ic.pause_when -> (Date.now() - time_previous) / 1000 > (SLOWEST_FRAME * 2)
-
-animation_loop = ->
-  time_now = Date.now()
-  seconds_elapsed = (time_now - time_previous) / 1000
-  time_previous = time_now
-  if seconds_elapsed > SLOWEST_FRAME
-    # first frame rendered for a while; unpause interval commands.
-    _(interval_commands).each (ic) -> ic.unpause()
-  else
-    view.clear()
-    Physics.apply_velocity(view, seconds_elapsed)
-    for o, i in objects
-      Physics.apply_x_velocity(o, seconds_elapsed) if o.velocity
-      splat_detection(o, objects) if o.platformable
-      Physics.apply_gravity(o, seconds_elapsed) if o.gravity
-      Physics.apply_y_velocity(o, seconds_elapsed) if o.velocity
-      platform_detection(o, objects) if o.platformable
-      o.render(view) if o.render
-  webkitRequestAnimationFrame(animation_loop)
+animator = new Animator(ticker, interval_commands)
 
 shootables_hit = (objects, bullet) ->
   _(objects).select (o) ->
@@ -387,4 +391,4 @@ view.canvas.addEventListener("mousemove", mouse_move_listener)
 ##
 # The game!
 
-animation_loop()
+animator.start()

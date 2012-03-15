@@ -1,5 +1,5 @@
 (function() {
-  var Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GarbageCollector, IntervalCommand, Particle, PhysicalObject, Physics, SLOWEST_FRAME, Viewport, animation_loop, click_listener, crosshair, interval_commands, mouse_move_listener, platform_detection, platform_x_intersecting, rr, rw, shootables_hit, splat_detection, time_previous, view,
+  var Animator, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GarbageCollector, IntervalCommand, Particle, PhysicalObject, Physics, Viewport, animator, click_listener, crosshair, interval_commands, mouse_move_listener, platform_detection, platform_x_intersecting, rr, rw, shootables_hit, splat_detection, ticker, view,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -654,6 +654,52 @@
 
   })();
 
+  Animator = (function() {
+
+    function Animator(ticker, interval_commands) {
+      var _this = this;
+      this.ticker = ticker;
+      this.interval_commands = interval_commands;
+      this.keep_animating = __bind(this.keep_animating, this);
+      _(this.interval_commands).each(function(c) {
+        return c.pause_when(function() {
+          return _this.seconds_elapsed(Date.now()) > _this.pause_threshold * 2;
+        });
+      });
+    }
+
+    Animator.prototype.start = function() {
+      this.time_previous = Date.now();
+      _(this.interval_commands).each(function(c) {
+        return c.start();
+      });
+      return this.keep_animating();
+    };
+
+    Animator.prototype.keep_animating = function() {
+      var now, seconds_elapsed;
+      seconds_elapsed = this.seconds_elapsed(now = Date.now());
+      this.time_previous = now;
+      if (seconds_elapsed > this.pause_threshold) {
+        _(this.interval_commands).each(function(ic) {
+          return ic.unpause();
+        });
+      } else {
+        this.ticker(seconds_elapsed);
+      }
+      return webkitRequestAnimationFrame(this.keep_animating);
+    };
+
+    Animator.prototype.pause_threshold = 0.2;
+
+    Animator.prototype.seconds_elapsed = function(now) {
+      return (now - this.time_previous) / 1000;
+    };
+
+    return Animator;
+
+  })();
+
   rr = function(from, to) {
     return from + Math.floor(Math.random() * (to - from));
   };
@@ -697,42 +743,30 @@
 
   objects.push(crosshair = new Crosshair(view));
 
-  interval_commands = [new EscapeeGenerator(view, objects).start(), new BuildingGenerator(view, objects).start(), new GarbageCollector(view, objects).start()];
+  interval_commands = [new EscapeeGenerator(view, objects), new BuildingGenerator(view, objects), new GarbageCollector(view, objects)];
 
-  SLOWEST_FRAME = 0.2;
-
-  time_previous = Date.now();
-
-  _(interval_commands).each(function(ic) {
-    return ic.pause_when(function() {
-      return (Date.now() - time_previous) / 1000 > (SLOWEST_FRAME * 2);
-    });
-  });
-
-  animation_loop = function() {
-    var i, o, seconds_elapsed, time_now, _len;
-    time_now = Date.now();
-    seconds_elapsed = (time_now - time_previous) / 1000;
-    time_previous = time_now;
-    if (seconds_elapsed > SLOWEST_FRAME) {
-      _(interval_commands).each(function(ic) {
-        return ic.unpause();
-      });
-    } else {
-      view.clear();
-      Physics.apply_velocity(view, seconds_elapsed);
-      for (i = 0, _len = objects.length; i < _len; i++) {
-        o = objects[i];
-        if (o.velocity) Physics.apply_x_velocity(o, seconds_elapsed);
-        if (o.platformable) splat_detection(o, objects);
-        if (o.gravity) Physics.apply_gravity(o, seconds_elapsed);
-        if (o.velocity) Physics.apply_y_velocity(o, seconds_elapsed);
-        if (o.platformable) platform_detection(o, objects);
-        if (o.render) o.render(view);
+  ticker = function(seconds_elapsed) {
+    var i, o, _len, _results;
+    view.clear();
+    Physics.apply_velocity(view, seconds_elapsed);
+    _results = [];
+    for (i = 0, _len = objects.length; i < _len; i++) {
+      o = objects[i];
+      if (o.velocity) Physics.apply_x_velocity(o, seconds_elapsed);
+      if (o.platformable) splat_detection(o, objects);
+      if (o.gravity) Physics.apply_gravity(o, seconds_elapsed);
+      if (o.velocity) Physics.apply_y_velocity(o, seconds_elapsed);
+      if (o.platformable) platform_detection(o, objects);
+      if (o.render) {
+        _results.push(o.render(view));
+      } else {
+        _results.push(void 0);
       }
     }
-    return webkitRequestAnimationFrame(animation_loop);
+    return _results;
   };
+
+  animator = new Animator(ticker, interval_commands);
 
   shootables_hit = function(objects, bullet) {
     return _(objects).select(function(o) {
@@ -764,6 +798,6 @@
 
   view.canvas.addEventListener("mousemove", mouse_move_listener);
 
-  animation_loop();
+  animator.start();
 
 }).call(this);
