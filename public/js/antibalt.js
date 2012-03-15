@@ -1,5 +1,5 @@
 (function() {
-  var AbstractGenerator, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GarbageCollector, Particle, PhysicalObject, Physics, Viewport, animation_loop, click_listener, crosshair, mouse_move_listener, platform_detection, platform_x_intersecting, rr, rw, shootables_hit, splat_detection, time_previous, view,
+  var Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GarbageCollector, IntervalCommand, Particle, PhysicalObject, Physics, Viewport, animation_loop, click_listener, crosshair, mouse_move_listener, platform_detection, platform_x_intersecting, rr, rw, shootables_hit, splat_detection, time_previous, view,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -405,25 +405,26 @@
 
   })(PhysicalObject);
 
-  AbstractGenerator = (function() {
+  IntervalCommand = (function() {
 
-    function AbstractGenerator(view, objects) {
+    function IntervalCommand(view, objects) {
       this.view = view;
       this.objects = objects;
-      this.keep_generating = __bind(this.keep_generating, this);
+      this.keep_running = __bind(this.keep_running, this);
     }
 
-    AbstractGenerator.prototype.start = function() {
-      if (this.generate_first) this.generate_first();
-      return this.keep_generating();
+    IntervalCommand.prototype.start = function() {
+      if (this.execute_first) this.execute_first();
+      this.keep_running();
+      return this;
     };
 
-    AbstractGenerator.prototype.keep_generating = function() {
-      this.generate();
-      return _.delay(this.keep_generating, this.delay());
+    IntervalCommand.prototype.keep_running = function() {
+      this.execute();
+      return _.delay(this.keep_running, this.delay());
     };
 
-    return AbstractGenerator;
+    return IntervalCommand;
 
   })();
 
@@ -439,13 +440,13 @@
       return rw(500, 300);
     };
 
-    EscapeeGenerator.prototype.generate = function() {
+    EscapeeGenerator.prototype.execute = function() {
       return objects.unshift(new Escapee(this.view.x, rr(0, this.view.height / 4)));
     };
 
     return EscapeeGenerator;
 
-  })(AbstractGenerator);
+  })(IntervalCommand);
 
   BuildingGenerator = (function(_super) {
 
@@ -459,11 +460,11 @@
       return 500;
     };
 
-    BuildingGenerator.prototype.generate_first = function() {
+    BuildingGenerator.prototype.execute_first = function() {
       return this.objects.unshift(this.latest = new Building(0, view.height / 2, view.width / 2, this.view.height));
     };
 
-    BuildingGenerator.prototype.generate = function() {
+    BuildingGenerator.prototype.execute = function() {
       var _results;
       _results = [];
       while (this.latest.right_x() < this.view.right_x() + 100) {
@@ -502,7 +503,7 @@
 
     return BuildingGenerator;
 
-  })(AbstractGenerator);
+  })(IntervalCommand);
 
   DebugInfo = (function() {
 

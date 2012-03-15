@@ -194,24 +194,25 @@ class Particle extends PhysicalObject
     view.fillRect(@x, @y, @width, @height, c)
   should_gc: (view) -> Date.now() >= @expiry
 
-class AbstractGenerator
+class IntervalCommand
   constructor: (@view, @objects) ->
   start: ->
-    @generate_first() if @generate_first
-    @keep_generating()
-  keep_generating: =>
-    @generate()
-    _.delay @keep_generating, @delay()
+    @execute_first() if @execute_first
+    @keep_running()
+    this
+  keep_running: =>
+    @execute()
+    _.delay @keep_running, @delay()
 
-class EscapeeGenerator extends AbstractGenerator
+class EscapeeGenerator extends IntervalCommand
   delay: -> rw(500, 300)
-  generate: -> objects.unshift new Escapee(@view.x, rr(0, @view.height / 4))
+  execute: -> objects.unshift new Escapee(@view.x, rr(0, @view.height / 4))
 
-class BuildingGenerator extends AbstractGenerator
+class BuildingGenerator extends IntervalCommand
   delay: -> 500
-  generate_first: ->
+  execute_first: ->
     @objects.unshift @latest = new Building(0, view.height / 2, view.width / 2, @view.height)
-  generate: -> @build() while @latest.right_x() < @view.right_x() + 100
+  execute: -> @build() while @latest.right_x() < @view.right_x() + 100
   build: -> @objects.unshift @latest = new Building(@x(), @y(), @width(), @view.height)
   gap: -> rr 10, 100
   width: -> rr 200, 400
