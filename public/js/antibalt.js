@@ -1,5 +1,5 @@
 (function() {
-  var Animator, BackgroundGenerator, BackgroundTile, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GamePhysics, GarbageCollector, Gun, IntervalCommand, LightningFlasher, Particle, PhysicalObject, Physics, Viewport, animator, crosshair, d2r, debug, game_physics, interval_commands, rr, rw, ticker, view,
+  var Animator, BackgroundGenerator, BackgroundTile, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GamePhysics, GarbageCollector, Gun, IntervalCommand, LightningFlasher, Particle, PhysicalObject, Physics, RainLayer, Viewport, animator, crosshair, d2r, debug, game_physics, interval_commands, rain_layer, rr, rw, ticker, view,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
@@ -931,6 +931,38 @@
 
   })(IntervalCommand);
 
+  RainLayer = (function() {
+
+    function RainLayer(view) {
+      this.view = view;
+      this.angle = d2r(30);
+      this.width = this.view.width * 1.1;
+      this.height = this.view.height * 1.6;
+    }
+
+    RainLayer.prototype.render = function() {
+      var c,
+        _this = this;
+      c = this.view.context;
+      c.save();
+      c.translate(280, -400);
+      c.rotate(this.angle);
+      c.fillStyle = Color.gray(rw(64, 16), 0.6);
+      _(8).times(function() {
+        var h, w, x, y;
+        w = 1;
+        h = rr(128, 256) * 2;
+        x = rr(0, _this.width);
+        y = rr(0, _this.height - h);
+        return c.fillRect(x, y, w, h);
+      });
+      return c.restore();
+    };
+
+    return RainLayer;
+
+  })();
+
   rr = function(from, to) {
     return from + Math.floor(Math.random() * (to - from));
   };
@@ -947,6 +979,8 @@
 
   game_physics = new GamePhysics;
 
+  rain_layer = new RainLayer(view);
+
   window.objects = [];
 
   debug = new DebugInfo(view, objects);
@@ -956,19 +990,15 @@
   interval_commands = [new EscapeeGenerator(view, objects), new BuildingGenerator(view, objects), new GarbageCollector(view, objects), new BackgroundGenerator(view, objects), new LightningFlasher(view, objects)];
 
   ticker = function(seconds_elapsed) {
-    var i, o, _len, _results;
+    var i, o, _len;
     view.clear();
     Physics.apply_velocity(view, seconds_elapsed);
-    _results = [];
     for (i = 0, _len = objects.length; i < _len; i++) {
       o = objects[i];
       game_physics.apply_to_object(o, objects, seconds_elapsed);
-      if (o.render) {
-        _results.push(o.render(view));
-      } else {
-        _results.push(void 0);
-      }
+      if (o.render) o.render(view);
     }
+    rain_layer.render();
     return debug.render(view);
   };
 

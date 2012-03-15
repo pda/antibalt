@@ -417,6 +417,26 @@ class LightningFlasher extends IntervalCommand
       @view.set_background_color(color)
       _.delay (=> @view.set_background_color()), 50
 
+class RainLayer
+  constructor: (@view) ->
+    @angle = d2r(30)
+    @width = @view.width * 1.1
+    @height = @view.height * 1.6
+  render: ->
+    c = @view.context
+    c.save()
+    c.translate(280, -400)
+    c.rotate(@angle)
+    c.fillStyle = Color.gray(rw(64, 16), 0.6)
+    #c.fillRect(0, 0, @width, @height)
+    _(8).times =>
+      w = 1
+      h = rr(128, 256) * 2
+      x = rr(0, @width)
+      y = rr(0, @height - h)
+      c.fillRect(x, y, w, h)
+    c.restore()
+
 ##
 # Helper functions
 
@@ -434,6 +454,7 @@ d2r = (degrees) -> degrees * Math.PI / 180
 
 view = new Viewport(1200, 600)
 game_physics = new GamePhysics
+rain_layer = new RainLayer(view)
 window.objects = []
 debug = new DebugInfo(view, objects)
 objects.push crosshair = new Crosshair(view)
@@ -452,6 +473,7 @@ ticker = (seconds_elapsed) ->
   for o, i in objects
     game_physics.apply_to_object(o, objects, seconds_elapsed)
     o.render(view) if o.render
+  rain_layer.render()
   debug.render(view)
 
 animator = new Animator(ticker, interval_commands)
