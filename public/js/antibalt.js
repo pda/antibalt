@@ -177,10 +177,12 @@
     };
 
     Crosshair.prototype.render = function(view) {
-      view.context.fillStyle = this.color;
-      view.context.fillRect(this.x, this.y, this.width, this.height);
-      view.context.fillStyle = this.color_dot;
-      return view.context.fillRect(this.center.x, this.center.y, 4, 4);
+      var c;
+      c = view.context;
+      c.fillStyle = this.color;
+      c.fillRect(this.x, this.y, this.width, this.height);
+      c.fillStyle = this.color_dot;
+      return c.fillRect(this.center.x, this.center.y, 4, 4);
     };
 
     return Crosshair;
@@ -238,27 +240,28 @@
     };
 
     Escapee.prototype.drawRunning = function(view, time) {
-      var base, phase;
+      var base, c, phase;
       phase = Math.sin(time * 0.03);
       base = view.world_to_view(this.x, this.y);
-      view.context.save();
-      view.context.translate(base.x, base.y);
-      view.context.save();
-      view.context.fillStyle = this.color;
-      view.context.rotate(phase * 0.2);
-      view.context.fillRect(0, 0, 16, 16);
-      view.context.fillStyle = Color.string(32, 32, 128);
-      view.context.fillRect(12, 4, 4, 4);
-      view.context.fillRect(8, 10, 8, 4);
-      view.context.restore();
-      view.context.translate(4, 16);
-      view.context.rotate(phase * 0.5 + 0.1);
-      view.context.fillStyle = this.color;
-      view.context.fillRect(0, 0, 8, 16);
-      view.context.rotate(phase * -1);
-      view.context.fillStyle = this.color;
-      view.context.fillRect(0, 0, 8, 16);
-      return view.context.restore();
+      c = view.context;
+      c.save();
+      c.translate(base.x, base.y);
+      c.save();
+      c.fillStyle = this.color;
+      c.rotate(phase * 0.2);
+      c.fillRect(0, 0, 16, 16);
+      c.fillStyle = Color.string(32, 32, 128);
+      c.fillRect(12, 4, 4, 4);
+      c.fillRect(8, 10, 8, 4);
+      c.restore();
+      c.translate(4, 16);
+      c.rotate(phase * 0.5 + 0.1);
+      c.fillStyle = this.color;
+      c.fillRect(0, 0, 8, 16);
+      c.rotate(phase * -1);
+      c.fillStyle = this.color;
+      c.fillRect(0, 0, 8, 16);
+      return c.restore();
     };
 
     Escapee.prototype.jump = function() {

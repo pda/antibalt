@@ -74,10 +74,11 @@ class Crosshair extends PhysicalObject
     @x = x - @width / 2
     @y = y - @height / 2
   render: (view) ->
-    view.context.fillStyle = @color
-    view.context.fillRect(@x, @y, @width, @height)
-    view.context.fillStyle = @color_dot
-    view.context.fillRect(@center.x, @center.y, 4, 4)
+    c = view.context
+    c.fillStyle = @color
+    c.fillRect(@x, @y, @width, @height)
+    c.fillStyle = @color_dot
+    c.fillRect(@center.x, @center.y, 4, 4)
 
 class Bullet extends PhysicalObject
   constructor: (x, y) ->
@@ -103,31 +104,32 @@ class Escapee extends PhysicalObject
   drawRunning: (view, time) ->
     phase = Math.sin(time * 0.03)
     base = view.world_to_view(@x, @y)
-    view.context.save()
-    view.context.translate(base.x, base.y)
+    c = view.context
+    c.save()
+    c.translate(base.x, base.y)
 
     # head
-    view.context.save()
-    view.context.fillStyle = @color
-    view.context.rotate(phase * 0.2)
-    view.context.fillRect(0, 0, 16, 16)
-    view.context.fillStyle = Color.string(32, 32, 128)
-    view.context.fillRect(12, 4, 4, 4)
-    view.context.fillRect(8, 10, 8, 4)
-    view.context.restore()
+    c.save()
+    c.fillStyle = @color
+    c.rotate(phase * 0.2)
+    c.fillRect(0, 0, 16, 16)
+    c.fillStyle = Color.string(32, 32, 128)
+    c.fillRect(12, 4, 4, 4)
+    c.fillRect(8, 10, 8, 4)
+    c.restore()
 
     # legs
-    view.context.translate(4, 16)
+    c.translate(4, 16)
 
-    view.context.rotate(phase * 0.5 + 0.1)
-    view.context.fillStyle = @color
-    view.context.fillRect(0, 0, 8, 16)
+    c.rotate(phase * 0.5 + 0.1)
+    c.fillStyle = @color
+    c.fillRect(0, 0, 8, 16)
 
-    view.context.rotate(phase * -1)
-    view.context.fillStyle = @color
-    view.context.fillRect(0, 0, 8, 16)
+    c.rotate(phase * -1)
+    c.fillStyle = @color
+    c.fillRect(0, 0, 8, 16)
 
-    view.context.restore()
+    c.restore()
   jump: ->
     @gravity = true
     @velocity.y = rr(-48, -24)
