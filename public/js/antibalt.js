@@ -218,10 +218,12 @@
     Escapee.prototype.shootable = true;
 
     function Escapee(x, y) {
-      var _ref;
+      var greenness, lightness, _ref;
       this.x = x;
       this.y = y;
-      this.color = Color.string(64, 64, rr(192, 255));
+      lightness = rr(16, 48);
+      greenness = rr(64, 96);
+      this.color = Color.string(lightness, lightness + greenness, lightness);
       this.velocity = {
         x: rw(32, 8),
         y: 0
@@ -250,9 +252,9 @@
       c.fillStyle = this.color;
       c.rotate(phase * 0.2);
       c.fillRect(0, 0, 16, 16);
-      c.fillStyle = Color.string(32, 32, 128);
+      c.fillStyle = Color.string(64, 32, 32);
       c.fillRect(12, 4, 4, 4);
-      c.fillRect(8, 10, 8, 4);
+      c.fillRect(8, 10, 7, 4);
       c.restore();
       c.translate(4, 16);
       c.rotate(phase * 0.5 + 0.1);

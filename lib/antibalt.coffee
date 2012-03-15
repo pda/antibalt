@@ -94,7 +94,9 @@ class Escapee extends PhysicalObject
   platformable: true
   shootable: true
   constructor: (@x, @y) ->
-    @color = Color.string(64, 64, rr(192, 255))
+    lightness = rr(16, 48)
+    greenness = rr(64, 96)
+    @color = Color.string(lightness, lightness + greenness, lightness)
     @velocity = { x: rw(32, 8), y: 0 }
     [ @width, @height ] = [ 16, 32 ]
   should_gc: (view) -> @x > view.right_x() || @y > view.height
@@ -113,9 +115,9 @@ class Escapee extends PhysicalObject
     c.fillStyle = @color
     c.rotate(phase * 0.2)
     c.fillRect(0, 0, 16, 16)
-    c.fillStyle = Color.string(32, 32, 128)
+    c.fillStyle = Color.string(64, 32, 32)
     c.fillRect(12, 4, 4, 4)
-    c.fillRect(8, 10, 8, 4)
+    c.fillRect(8, 10, 7, 4)
     c.restore()
 
     # legs
