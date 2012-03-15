@@ -41,6 +41,27 @@ class PhysicalObject
     @x_intersecting(other) && @y_intersecting(other)
   weight: 1
 
+class Gun
+  constructor: (@view, @objects, @crosshair) ->
+  bind_to_view: ->
+    @view.canvas.addEventListener("click", @click_listener)
+    @view.canvas.addEventListener("mousemove", @mouse_move_listener)
+  aim: (x, y) ->
+    @crosshair.aim(x, y)
+  fire: (x, y) ->
+    new Explosion(@objects, x, y).bullet()
+    bullet = new Bullet(x, y)
+    shootables = @shootables_hit(bullet)
+    _(shootables).each (o) => o.bang(@objects)
+  click_listener: (event) =>
+    point = @view.view_to_world(event.offsetX, event.offsetY)
+    @fire(point.x, point.y)
+  mouse_move_listener: (event) =>
+    @aim(event.offsetX, event.offsetY)
+  shootables_hit: (bullet) ->
+    _(@objects).select (o) ->
+      o.shootable && (o.intersecting(bullet) || bullet.intersecting(o))
+
 class Crosshair extends PhysicalObject
   constructor: (view) ->
     @aim( x: view.width / 2, y: view.height / 2 )
@@ -48,10 +69,10 @@ class Crosshair extends PhysicalObject
     [ @width, @height ] = [ bullet.width, bullet.height ]
     @color = Color.string(255, 255, 0, 0.1)
     @color_dot = Color.black()
-  aim: (point) ->
-    @center = point
-    @x = point.x - @width / 2
-    @y = point.y - @height / 2
+  aim: (x, y) ->
+    @center = { x: x, y: y }
+    @x = x - @width / 2
+    @y = y - @height / 2
   render: (view) ->
     view.context.fillStyle = @color
     view.context.fillRect(@x, @y, @width, @height)
@@ -370,25 +391,7 @@ ticker = (seconds_elapsed) ->
 
 animator = new Animator(ticker, interval_commands)
 
-shootables_hit = (objects, bullet) ->
-  _(objects).select (o) ->
-    o.shootable && (o.intersecting(bullet) || bullet.intersecting(o))
-
-click_listener = (event) ->
-  point = view.view_to_world(event.offsetX, event.offsetY)
-  new Explosion(objects, point.x, point.y).bullet()
-  bullet = new Bullet(point.x, point.y)
-  shootables = shootables_hit(objects, bullet)
-  _(shootables).each (o) ->
-    o.bang(objects)
-
-mouse_move_listener = (event) ->
-  #point = view.view_to_world(event.offsetX, event.offsetY)
-  point = { x: event.offsetX, y: event.offsetY }
-  crosshair.aim(point)
-
-view.canvas.addEventListener("click", click_listener)
-view.canvas.addEventListener("mousemove", mouse_move_listener)
+new Gun(view, objects, crosshair).bind_to_view()
 
 ##
 # The game!

@@ -1,8 +1,8 @@
 (function() {
-  var Animator, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GamePhysics, GarbageCollector, IntervalCommand, Particle, PhysicalObject, Physics, Viewport, animator, click_listener, crosshair, game_physics, interval_commands, mouse_move_listener, rr, rw, shootables_hit, ticker, view,
+  var Animator, Building, BuildingGenerator, Bullet, Color, Crosshair, DebugInfo, Escapee, EscapeeGenerator, Explosion, GamePhysics, GarbageCollector, Gun, IntervalCommand, Particle, PhysicalObject, Physics, Viewport, animator, crosshair, game_physics, interval_commands, rr, rw, ticker, view,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
   Physics = {
     GRAVITY: 9.80665,
@@ -101,6 +101,56 @@
 
   })();
 
+  Gun = (function() {
+
+    function Gun(view, objects, crosshair) {
+      this.view = view;
+      this.objects = objects;
+      this.crosshair = crosshair;
+      this.mouse_move_listener = __bind(this.mouse_move_listener, this);
+      this.click_listener = __bind(this.click_listener, this);
+    }
+
+    Gun.prototype.bind_to_view = function() {
+      this.view.canvas.addEventListener("click", this.click_listener);
+      return this.view.canvas.addEventListener("mousemove", this.mouse_move_listener);
+    };
+
+    Gun.prototype.aim = function(x, y) {
+      return this.crosshair.aim(x, y);
+    };
+
+    Gun.prototype.fire = function(x, y) {
+      var bullet, shootables,
+        _this = this;
+      new Explosion(this.objects, x, y).bullet();
+      bullet = new Bullet(x, y);
+      shootables = this.shootables_hit(bullet);
+      return _(shootables).each(function(o) {
+        return o.bang(_this.objects);
+      });
+    };
+
+    Gun.prototype.click_listener = function(event) {
+      var point;
+      point = this.view.view_to_world(event.offsetX, event.offsetY);
+      return this.fire(point.x, point.y);
+    };
+
+    Gun.prototype.mouse_move_listener = function(event) {
+      return this.aim(event.offsetX, event.offsetY);
+    };
+
+    Gun.prototype.shootables_hit = function(bullet) {
+      return _(this.objects).select(function(o) {
+        return o.shootable && (o.intersecting(bullet) || bullet.intersecting(o));
+      });
+    };
+
+    return Gun;
+
+  })();
+
   Crosshair = (function(_super) {
 
     __extends(Crosshair, _super);
@@ -117,10 +167,13 @@
       this.color_dot = Color.black();
     }
 
-    Crosshair.prototype.aim = function(point) {
-      this.center = point;
-      this.x = point.x - this.width / 2;
-      return this.y = point.y - this.height / 2;
+    Crosshair.prototype.aim = function(x, y) {
+      this.center = {
+        x: x,
+        y: y
+      };
+      this.x = x - this.width / 2;
+      return this.y = y - this.height / 2;
     };
 
     Crosshair.prototype.render = function(view) {
@@ -782,35 +835,7 @@
 
   animator = new Animator(ticker, interval_commands);
 
-  shootables_hit = function(objects, bullet) {
-    return _(objects).select(function(o) {
-      return o.shootable && (o.intersecting(bullet) || bullet.intersecting(o));
-    });
-  };
-
-  click_listener = function(event) {
-    var bullet, point, shootables;
-    point = view.view_to_world(event.offsetX, event.offsetY);
-    new Explosion(objects, point.x, point.y).bullet();
-    bullet = new Bullet(point.x, point.y);
-    shootables = shootables_hit(objects, bullet);
-    return _(shootables).each(function(o) {
-      return o.bang(objects);
-    });
-  };
-
-  mouse_move_listener = function(event) {
-    var point;
-    point = {
-      x: event.offsetX,
-      y: event.offsetY
-    };
-    return crosshair.aim(point);
-  };
-
-  view.canvas.addEventListener("click", click_listener);
-
-  view.canvas.addEventListener("mousemove", mouse_move_listener);
+  new Gun(view, objects, crosshair).bind_to_view();
 
   animator.start();
 
