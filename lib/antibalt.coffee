@@ -495,7 +495,7 @@ ticker = (seconds_elapsed) ->
     o.render(view) if o.render
   crosshair.render(view)
   rain_layer.render()
-  debug.render(view)
+  #debug.render(view)
 
 animator = new Animator(ticker, interval_commands)
 
