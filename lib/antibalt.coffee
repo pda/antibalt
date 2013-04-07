@@ -46,6 +46,7 @@ class Gun
   bind_to_view: ->
     @view.canvas.addEventListener("click", @click_listener)
     @view.canvas.addEventListener("mousemove", @mouse_move_listener)
+    @view.canvas.ontouchstart = @touch_listener
   aim: (x, y) ->
     @crosshair.aim(x, y)
   fire: (x, y) ->
@@ -53,8 +54,11 @@ class Gun
     bullet = new Bullet(x, y)
     shootables = @shootables_hit(bullet)
     _(shootables).each (o) => o.bang(@objects)
+  touch_listener: (event) =>
+    @click_listener(event.touches[0])
+    false
   click_listener: (event) =>
-    point = @view.view_to_world(event.offsetX, event.offsetY)
+    point = @view.view_to_world(event.clientX, event.clientY)
     @fire(point.x, point.y)
   mouse_move_listener: (event) =>
     @aim(event.offsetX, event.offsetY)
@@ -300,7 +304,7 @@ class Viewport
     @canvas = document.getElementById("antibalt")
     @canvas.width = @width
     @canvas.height = @height
-    @default_background_color = Color.string(8, 8, 16)
+    @default_background_color = Color.string(16, 16, 32)
     @set_background_color()
     @canvas.style.cursor = "none"
     @context = @canvas.getContext("2d")
@@ -429,8 +433,8 @@ class RainLayer
     c.rotate(@angle)
     c.fillStyle = Color.gray(rw(64, 16), 0.6)
     #c.fillRect(0, 0, @width, @height)
-    _(8).times =>
-      w = 1
+    _(16).times =>
+      w = 2
       h = rr(128, 256) * 2
       x = rr(0, @width)
       y = rr(0, @height - h)
@@ -452,7 +456,7 @@ d2r = (degrees) -> degrees * Math.PI / 180
 ##
 # Random stuff to refactor
 
-view = new Viewport(960, 640)
+view = new Viewport(2048 / 2, 1536 / 2)
 game_physics = new GamePhysics
 rain_layer = new RainLayer(view)
 window.objects = []
