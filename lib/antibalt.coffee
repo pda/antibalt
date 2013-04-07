@@ -58,7 +58,7 @@ class Gun
     @click_listener(event.touches[0])
     false
   click_listener: (event) =>
-    point = @view.view_to_world(event.clientX, event.clientY)
+    point = @view.view_to_world(@view.canvas.relMouseCoords(event)...)
     @fire(point.x, point.y)
   mouse_move_listener: (event) =>
     @aim(event.offsetX, event.offsetY)
@@ -80,9 +80,11 @@ class Crosshair extends PhysicalObject
   render: (view) ->
     c = view.context
     c.fillStyle = @color
-    c.fillRect(@x, @y, @width, @height)
-    c.fillStyle = @color_dot
-    c.fillRect(@center.x, @center.y, 4, 4)
+    c.strokeStyle = @color
+    c.fillRect(@x, @y, @width, @height) # box
+    c.strokeRect(@x, @y, @width, @height) # outline
+    c.strokeRect(@center.x - 5, @center.y, 10, 0) # cross (h)
+    c.strokeRect(@center.x, @center.y - 5, 0, 10) # cross (v)
 
 class Bullet extends PhysicalObject
   constructor: (x, y) ->
@@ -300,8 +302,12 @@ class DebugInfo
     ]
 
 class Viewport
-  constructor: (@width, @height) ->
-    @canvas = document.getElementById("antibalt")
+  constructor: (container) ->
+    @width = container.clientWidth
+    @height = container.clientHeight
+    container.appendChild(
+      @canvas = document.createElement("canvas")
+    )
     @canvas.width = @width
     @canvas.height = @height
     @default_background_color = Color.string(16, 16, 32)
@@ -456,12 +462,22 @@ d2r = (degrees) -> degrees * Math.PI / 180
 ##
 # Random stuff to refactor
 
-view = new Viewport(2048 / 2, 1536 / 2)
+# Adapted from http://stackoverflow.com/a/5932203/430695
+HTMLCanvasElement.prototype.relMouseCoords = (event) ->
+  [x, y] = [0, 0]
+  el = this
+  loop
+    x += el.offsetLeft
+    y += el.offsetTop
+    break unless (el = el.offsetParent)
+  [event.pageX - x, event.pageY - y]
+
+view = new Viewport(document.getElementById("antibalt"))
 game_physics = new GamePhysics
 rain_layer = new RainLayer(view)
 window.objects = []
 debug = new DebugInfo(view, objects)
-objects.push crosshair = new Crosshair(view)
+crosshair = new Crosshair(view)
 
 interval_commands = [
   new EscapeeGenerator(view, objects)
@@ -477,6 +493,7 @@ ticker = (seconds_elapsed) ->
   for o, i in objects
     game_physics.apply_to_object(o, objects, seconds_elapsed)
     o.render(view) if o.render
+  crosshair.render(view)
   rain_layer.render()
   debug.render(view)
 
