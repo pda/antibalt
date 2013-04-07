@@ -429,23 +429,20 @@ class LightningFlasher extends IntervalCommand
 
 class RainLayer
   constructor: (@view) ->
-    @angle = d2r(30)
-    @width = @view.width * 1.1
-    @height = @view.height * 1.6
+    @angle = d2r(20)
   render: ->
     c = @view.context
-    c.save()
-    c.translate(280, -400)
-    c.rotate(@angle)
-    c.fillStyle = Color.gray(rw(64, 16), 0.6)
-    #c.fillRect(0, 0, @width, @height)
+    c.strokeStyle = Color.gray(rw(64, 16), 0.4)
+    c.lineWidth = 2
+    wind = rr(50, 100)
     _(16).times =>
-      w = 2
-      h = rr(128, 256) * 2
-      x = rr(0, @width)
-      y = rr(0, @height - h)
-      c.fillRect(x, y, w, h)
-    c.restore()
+      x = rr(wind / 2, @view.width)
+      y = 0
+      length = rr(@view.height / 4, @view.height)
+      c.beginPath()
+      c.moveTo(x, y)
+      c.lineTo(x - wind, y + length)
+      c.stroke()
 
 ##
 # Helper functions
